@@ -1,0 +1,101 @@
+# LDU Grant Operations — Cursor Rules
+# This file teaches Cursor's AI assistant about this project so it can help effectively.
+
+## Project Context
+
+This is an automated grant operations system for Life Development University (LDU), a 501(c)(3) nonprofit creative campus on Crenshaw Boulevard in Los Angeles. The system uses Python-based AI agents to find, qualify, score, write, and manage grant applications.
+
+LDU is co-founded by a mother-daughter duo (Kika Keith, CEO/Founder, and Kika Howze, Implementation Lead). The grant operation targets $6M–$10M in annual requests across 50–65 applications.
+
+## Organization Structure
+
+- **Kika Keith (CEO/Founder):** Approves final packages at D-3, makes funder calls, strategic decisions
+- **Kika Howze (Implementation Lead):** Builds systems, runs AI agents, manages pipeline, delivers packages
+- **Sheila:** Handles government paperwork and registrations
+- **Agents:** AI-powered automation handling research, writing, and follow-up
+
+## Funding Pillars (6 Categories)
+
+1. **Capital Campaign** — Facility buildout (4241 Crenshaw) + farm land acquisition (Woodland/Winters, Yolo County). Target: $3.5M–$9M.
+2. **Programming & Operations** — AI/tech training, camera operating, vocational skills, music, venue ops, entrepreneurship, youth dev, re-entry. Target: $750K–$2M/yr.
+3. **Studio WELEH** — Arts, apparel & sustainability funnel. Youth workshops, art shows, upcycling courses, content creation, field trips. Target: $400K–$1.2M/yr.
+4. **Agricultural Extension & Manufacturing** — Cultivation Campus in NorCal. Seasonal exchange, action sports, wellness, clothing factory, trades training. Target: $2M–$5M.
+5. **Founder & Enterprise** — Grants targeting founder demographics (women, Black women, cannabis social equity, under-40, 50+). Target: $50K–$200K/yr.
+6. **Cross-Cutting: Textile Sustainability & SB 707** — CalRecycle grants, circular economy, textile diversion. Target: $500K–$2M over 3 years.
+
+## Entity Structure
+
+- **Life Development Group** — 501(c)(3) parent entity
+- **Life Development University (LDU)** — Programs operate under this name
+- **Gorilla Rx Wellness Co.** — Cannabis dispensary, social equity licensee, women-owned, Black-owned
+- **Studio WELEH** — Artist incubator / arts & apparel funnel at LDU
+
+## Tech Stack
+
+- **Runtime:** Python 3.11+
+- **AI Drafting:** Claude API (Anthropic)
+- **Pipeline CRM:** Airtable (6 tables: Opportunities, Funders, Submissions, Reporting, Boilerplate Library, Team Tasks)
+- **Grant Discovery:** Instrumentl (automated) + manual research
+- **Automation:** Make.com (7 scenarios)
+- **File Storage:** Google Drive (10 folders organized by pillar)
+- **Communications:** Poke AI (SMS briefings, deadline alerts)
+- **Calendar:** Google Calendar (deadline sync)
+
+## Coding Standards
+
+- Use Python 3.11+ with type hints
+- All agent classes inherit from `BaseAgent` in `agents/base_agent.py`
+- Configuration lives in `config/` — never hardcode API keys, pillar definitions, or scoring weights
+- Use `python-dotenv` to load `.env` for all secrets
+- All Airtable operations go through `integrations/airtable_client.py`
+- All Claude API calls go through `integrations/claude_client.py`
+- Logging goes to `logs/` directory with ISO timestamps
+- Error handling: agents should retry 3 times on transient failures, then log and alert
+
+## Scoring Matrix
+
+Prospects are scored on 5 weighted criteria:
+- Mission Fit (30%): 1–5 alignment with LDU pillar(s)
+- Award Size (20%): 1–5 ($100K+ = 5, under $25K = 1–2)
+- Win Probability (25%): 1–5 (existing relationship = 5, long shot = 1–2)
+- Timeline Fit (15%): 1–5 (6+ weeks = 5, under 2 weeks = 1–2)
+- Strategic Value (10%): 1–5 (opens pipeline = 5, one-time = 3)
+
+Threshold: 3.5+ enters writing queue. Pillar 5 founder grants can enter at 3.0+ if simple and fast-turnaround.
+
+## Pre-Qualification Rules
+
+### Auto-Qualify (Must-Have)
+- LDU's 501(c)(3) eligible (or accepts for-profit for Gorilla Rx)
+- Geographic: LA County, California, national, or Yolo County
+- Meets org size/revenue thresholds
+- Aligns with at least one pillar
+
+### Auto-Disqualify
+- Requires certification LDU lacks (FQHC, accredited university)
+- Geographic restriction outside service areas
+- Award under $5,000 (unless Pillar 5 with strategic value)
+- Requires unattainable matching funds
+- Deadline under 14 days with complex application
+
+## Key Terminology
+
+- **The Corridor:** Geographic/conceptual connection between South LA (Crenshaw) and the farm
+- **Cultivation Campus:** The farm property (not a "camp")
+- **Seasonal Exchange:** Structured residencies aligned with growing seasons
+- **The Factory:** Clothing manufacturing facility at Cultivation Campus
+- **The Supply Chain:** Closed-loop system connecting Studio WELEH to The Factory
+- **Culture as Cultivation:** La Collina philosophy — growing food, people, community as one act
+
+## Important: Agent Operating Model
+
+The Implementation Lead (Kika Howze) reviews and refines AI outputs — she NEVER writes from scratch. All content generation goes through Claude AI. The agents produce; humans approve.
+
+## When Helping With This Project
+
+1. Always check `config/pillars.py` before modifying pillar-related code
+2. Always check `config/scoring.py` before modifying scoring logic
+3. Reference the funding pillar details when generating boilerplate or narrative content
+4. Keep the 28-day production cycle timeline in mind for any workflow changes
+5. Remember: Pillar 5 (Founder & Enterprise) grants have a lower threshold (3.0) and faster turnaround
+6. SB 707 / textile sustainability is cross-cutting — it touches Pillar 3 and Pillar 4

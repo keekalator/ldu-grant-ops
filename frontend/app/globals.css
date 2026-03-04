@@ -1,0 +1,166 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Press+Start+2P&family=Inter:wght@400;500;600;700;800&display=swap");
+
+/* ─── Base ────────────────────────────────────────────────────────────────── */
+* { box-sizing: border-box; padding: 0; margin: 0; }
+
+html, body {
+  background-color: #1565e8;
+  color: #0a0a1a;
+  font-family: "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ─── Pixel grid background ──────────────────────────────────────────────── */
+body {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #1254c8; }
+::-webkit-scrollbar-thumb { background: #ff1e78; border-radius: 0; }
+
+/* ─── Component Classes ──────────────────────────────────────────────────── */
+@layer components {
+
+  /* ── The key retro card ─────────────────────────────────────────────── */
+  .retro-card {
+    background: #fffbf0;
+    border: 2.5px solid #0a0a1a;
+    border-radius: 12px;
+    box-shadow: 4px 4px 0 #0a0a1a;
+  }
+
+  .retro-card-white {
+    background: #ffffff;
+    border: 2.5px solid #0a0a1a;
+    border-radius: 12px;
+    box-shadow: 4px 4px 0 #0a0a1a;
+  }
+
+  /* Colored variants */
+  .retro-card-pink   { @apply retro-card; border-color: #ff1e78; box-shadow: 4px 4px 0 #ff1e78; }
+  .retro-card-yellow { @apply retro-card; border-color: #0a0a1a; box-shadow: 4px 4px 0 #ffe100; }
+  .retro-card-lime   { @apply retro-card; border-color: #0a0a1a; box-shadow: 4px 4px 0 #00d94e; }
+  .retro-card-cyan   { @apply retro-card; border-color: #0a0a1a; box-shadow: 4px 4px 0 #00d4ff; }
+  .retro-card-purple { @apply retro-card; border-color: #0a0a1a; box-shadow: 4px 4px 0 #7c3aed; }
+
+  /* ── Game button ────────────────────────────────────────────────────── */
+  .btn-retro {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-family: "Orbitron", sans-serif;
+    font-weight: 900;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: 2.5px solid #0a0a1a;
+    border-radius: 8px;
+    padding: 8px 16px;
+    box-shadow: 3px 3px 0 #0a0a1a;
+    transition: all 0.1s ease;
+    cursor: pointer;
+    color: #0a0a1a;
+  }
+  .btn-retro:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 #0a0a1a;
+  }
+  .btn-retro-yellow { @apply btn-retro; background: #ffe100; }
+  .btn-retro-pink   { @apply btn-retro; background: #ff1e78; color: white; box-shadow: 3px 3px 0 #0a0a1a; }
+  .btn-retro-lime   { @apply btn-retro; background: #00d94e; }
+  .btn-retro-white  { @apply btn-retro; background: #ffffff; }
+  .btn-retro-blue   { @apply btn-retro; background: #1565e8; color: white; }
+
+  /* ── Section header label ───────────────────────────────────────────── */
+  .pixel-label {
+    font-family: "Orbitron", sans-serif;
+    font-weight: 900;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #0a0a1a;
+  }
+
+  /* ── Status pill ────────────────────────────────────────────────────── */
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-family: "Orbitron", sans-serif;
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: 2px solid #0a0a1a;
+    box-shadow: 2px 2px 0 #0a0a1a;
+  }
+
+  /* ── XP bar ─────────────────────────────────────────────────────────── */
+  .xp-track {
+    width: 100%;
+    height: 10px;
+    background: #d4cec0;
+    border: 2px solid #0a0a1a;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .xp-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.6s ease;
+  }
+
+  /* ── Page container ─────────────────────────────────────────────────── */
+  .page-container {
+    padding-bottom: 7rem;
+    padding-top: 0.75rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    max-width: 42rem;
+    margin-left: auto;
+    margin-right: auto;
+    min-height: 100vh;
+  }
+
+  /* ── Pixel divider ──────────────────────────────────────────────────── */
+  .pixel-divider {
+    height: 3px;
+    background: repeating-linear-gradient(
+      90deg,
+      #0a0a1a 0px, #0a0a1a 8px,
+      transparent 8px, transparent 12px
+    );
+    opacity: 0.3;
+    margin: 4px 0;
+  }
+
+  /* Skeleton */
+  .skeleton {
+    background: linear-gradient(90deg, #1e6ff0 25%, #2577f8 50%, #1e6ff0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 12px;
+    border: 2px solid rgba(255,255,255,0.2);
+  }
+
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+}
+
+/* ─── PWA standalone ──────────────────────────────────────────────────────── */
+@media (display-mode: standalone) {
+  body { padding-top: env(safe-area-inset-top); }
+}

@@ -1,0 +1,120 @@
+---
+description: LDU Grant Ops — Frontend Design System. Apply these rules whenever editing frontend/components or frontend/app files.
+globs: frontend/**/*.tsx, frontend/**/*.ts, frontend/**/*.css
+alwaysApply: true
+---
+
+# LDU Grant Ops — Frontend Design System
+
+## Stack
+- **Next.js 14** App Router, TypeScript, Tailwind CSS
+- **Fonts:** Orbitron (display/numbers), Inter (body)
+- **Icons:** Custom pixel-art SVG via `<PixelIcon name="…" />` — NO emojis, NO lucide-react
+
+## Color Palette
+```
+Page background:  #1565e8  (royal blue + 24px pixel grid)
+Card background:  #fffbf0  (warm cream)
+Card alt:         #ffffff
+Ink/borders:      #0a0a1a
+Muted text:       #aaaacc
+```
+
+### Brand Neons (for tags, accents, status)
+| Token    | Hex       | Use |
+|----------|-----------|-----|
+| pink     | #ff1e78   | High priority, overdue, Studio WELEH |
+| yellow   | #ffe100   | Active filter, writing queue |
+| lime     | #00d94e   | Amount badges, awarded |
+| cyan     | #00d4ff   | Info, review |
+| purple   | #7c3aed   | Capital Campaign, primary accent |
+| orange   | #ff6b00   | Founder & Enterprise, Farm |
+| blue     | #0066cc   | Programming & Operations, LDU |
+| teal     | #0099aa   | Textile Sustainability |
+
+## Entity Color System (lib/entities.ts)
+Apply consistently to every card as a left border stripe + entity chip:
+| Entity            | Color   | Background |
+|-------------------|---------|------------|
+| LDU (501c3)       | #1565e8 | #dbeafe    |
+| Studio WELEH      | #ff1e78 | #ffe0f0    |
+| Gorilla Rx        | #00a83a | #d1fae5    |
+| Farm Entity       | #ff6b00 | #fde68a    |
+| Kika Keith        | #7c3aed | #ede9fe    |
+
+Always import `getEntityStyle` from `@/lib/entities`.
+
+## Pillar IDs (from config/pillars.py)
+| ID    | Name                          | Color   |
+|-------|-------------------------------|---------|
+| P1    | Capital Campaign              | #7c3aed |
+| P2    | Programming & Operations      | #0066cc |
+| P3    | Studio WELEH                  | #ff1e78 |
+| P4    | Agricultural Extension        | #00a83a |
+| P5    | Founder & Enterprise          | #ff6b00 |
+| CROSS | Textile Sustainability/SB707  | #0099aa |
+
+## Card Pattern (the defining visual)
+```tsx
+<div
+  className="rounded-2xl border-[2.5px] border-[#0a0a1a] overflow-hidden"
+  style={{ background: "#fffbf0", boxShadow: "4px 4px 0 #0a0a1a" }}
+>
+  {/* Entity left stripe */}
+  <div className="w-1 h-full" style={{ background: entityColor }} />
+  {/* Content */}
+</div>
+```
+
+**Press-down effect on interactive cards:**
+```tsx
+className="transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+```
+
+## Shadow Scale
+- Cards:    `4px 4px 0 #0a0a1a`
+- Buttons:  `3px 3px 0 #0a0a1a`
+- Tags:     `2px 2px 0 #0a0a1a`
+- Small:    `1px 1px 0 #0a0a1a`
+
+## Typography
+- Section headers: `Orbitron, font-black, uppercase, tracking-widest, 11px`
+- Stat numbers:    `Orbitron, font-black, text-2xl+`
+- Body:            `Inter, text-sm, text-[#0a0a1a]`
+- Labels/tags:     `Orbitron, font-black, 9–10px, uppercase`
+
+## PixelIcon Available Names
+home, target, quill, pencil, building, trophy, pipeline, alert, clock,
+dollar, chart, rocket, search, check, arrow_left, arrow_right, bell,
+refresh, filter, star, cross
+
+**Writing tab always uses `quill`, not `pencil`.**
+
+## Routing
+- `/pipeline?stage=submitted`  → Pipeline pre-filtered to Submitted stage
+- `/pipeline?stage=writing`    → Pipeline pre-filtered to Writing/Review stage
+- `/pipeline?pillar=…`         → Pipeline pre-filtered by pillar name
+- `/opportunity/[id]`          → Full detail + inline edit for every field
+
+## API Routes
+- `GET /api/opportunities?status=…&pillar=…&priority=…`
+- `GET /api/opportunities/[id]`
+- `PATCH /api/opportunities/[id]` — body: `{ fields: { FieldName: value } }`
+- `GET /api/stats`
+- `GET /api/funders`
+
+## Inline Field Editing
+Use `<FieldEditor>` from `@/components/opportunity/FieldEditor` for any editable field.
+Supported types: text, textarea, number, date, url, select.
+Always PATCH to `/api/opportunities/[id]`.
+
+## Bottom Nav
+5 items: HQ (/), PIPELINE (/pipeline), WRITING (/writing-queue), FUNDERS (/funders), WINS (/awards)
+Rainbow pixel stripe at top of nav bar.
+
+## Do NOT
+- Use emojis anywhere
+- Use lucide-react icons
+- Use dark backgrounds (#0a0a0a, #1a1a1a, etc.)
+- Use gradient text (causes readability issues)
+- Hardcode Airtable API keys (use env vars via lib/airtable.ts)

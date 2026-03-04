@@ -1,0 +1,177 @@
+name: LDU Agent Schedule
+
+# ── When it runs ──────────────────────────────────────────────────────────────
+# All times in UTC. LDU is Pacific Time (PT = UTC-8 winter / UTC-7 summer).
+# Schedules use PST (UTC-8) as the baseline.
+#
+#  6:00 AM PT Mon + Thu  → 14:00 UTC Mon/Thu  → scrape new prospects
+#  8:00 AM PT daily      → 16:00 UTC daily    → screen + score + generate plans
+#  8:00 AM PT Monday     → 16:00 UTC Monday   → weekly review (runs same slot as daily)
+#  4:00 PM PT Friday     → 00:00 UTC Saturday → CEO weekly summary SMS
+
+on:
+  schedule:
+    - cron: "0 14 * * 1,4"   # Mon + Thu  6 AM PT  — SCRAPE
+    - cron: "0 16 * * *"     # Daily      8 AM PT  — DAILY PIPELINE
+    - cron: "0 16 * * 1"     # Monday     8 AM PT  — WEEKLY REVIEW (runs after daily)
+    - cron: "0 0 * * 6"      # Friday     4 PM PT  — CEO SUMMARY
+
+  # Manual trigger — Kika Howze can kick off any mode from the GitHub Actions tab
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Pipeline mode"
+        required: true
+        type: choice
+        options: [scrape, daily, weekly, summary, test, write]
+        default: daily
+      record_id:
+        description: "Airtable record ID (only used with --mode write)"
+        required: false
+        default: ""
+
+# ── Permissions ───────────────────────────────────────────────────────────────
+permissions:
+  contents: read
+
+jobs:
+
+  # ─── SCRAPE: Monday + Thursday 6 AM PT ──────────────────────────────────────
+  scrape:
+    name: "🔍 Scrape New Prospects"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' && (github.event.schedule == '0 14 * * 1,4')
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run scrape cycle
+        env:
+          ANTHROPIC_API_KEY:    ${{ secrets.ANTHROPIC_API_KEY }}
+          AIRTABLE_API_TOKEN:   ${{ secrets.AIRTABLE_API_TOKEN }}
+          AIRTABLE_BASE_ID:     ${{ secrets.AIRTABLE_BASE_ID }}
+          TIMEZONE:             America/Los_Angeles
+          LOG_LEVEL:            INFO
+        run: python scripts/run_pipeline.py --mode scrape
+
+  # ─── DAILY: Every day 8 AM PT ────────────────────────────────────────────────
+  daily:
+    name: "⚡ Daily Pipeline (Screen + Score + Writing Plans)"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' && github.event.schedule == '0 16 * * *'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run daily pipeline
+        env:
+          ANTHROPIC_API_KEY:    ${{ secrets.ANTHROPIC_API_KEY }}
+          AIRTABLE_API_TOKEN:   ${{ secrets.AIRTABLE_API_TOKEN }}
+          AIRTABLE_BASE_ID:     ${{ secrets.AIRTABLE_BASE_ID }}
+          TIMEZONE:             America/Los_Angeles
+          LOG_LEVEL:            INFO
+        run: python scripts/run_pipeline.py --mode daily
+
+  # ─── WEEKLY REVIEW: Monday 8 AM PT (after daily) ─────────────────────────────
+  weekly:
+    name: "📊 Weekly Pipeline Review"
+    runs-on: ubuntu-latest
+    needs: daily
+    if: |
+      always() &&
+      github.event_name == 'schedule' &&
+      github.event.schedule == '0 16 * * 1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run weekly review
+        env:
+          ANTHROPIC_API_KEY:    ${{ secrets.ANTHROPIC_API_KEY }}
+          AIRTABLE_API_TOKEN:   ${{ secrets.AIRTABLE_API_TOKEN }}
+          AIRTABLE_BASE_ID:     ${{ secrets.AIRTABLE_BASE_ID }}
+          TIMEZONE:             America/Los_Angeles
+          LOG_LEVEL:            INFO
+        run: python scripts/run_pipeline.py --mode weekly
+
+  # ─── CEO SUMMARY: Friday 4 PM PT ─────────────────────────────────────────────
+  ceo-summary:
+    name: "⭐ CEO Weekly Summary"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' && github.event.schedule == '0 0 * * 6'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate CEO summary
+        env:
+          ANTHROPIC_API_KEY:    ${{ secrets.ANTHROPIC_API_KEY }}
+          AIRTABLE_API_TOKEN:   ${{ secrets.AIRTABLE_API_TOKEN }}
+          AIRTABLE_BASE_ID:     ${{ secrets.AIRTABLE_BASE_ID }}
+          POKE_WEBHOOK_URL:     ${{ secrets.POKE_WEBHOOK_URL }}
+          CEO_CONTACT:          ${{ secrets.CEO_CONTACT }}
+          TIMEZONE:             America/Los_Angeles
+          LOG_LEVEL:            INFO
+        run: python scripts/run_pipeline.py --mode summary
+
+  # ─── MANUAL TRIGGER: any mode, from GitHub UI ────────────────────────────────
+  manual:
+    name: "🎮 Manual Run (${{ github.event.inputs.mode }})"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run pipeline
+        env:
+          ANTHROPIC_API_KEY:    ${{ secrets.ANTHROPIC_API_KEY }}
+          AIRTABLE_API_TOKEN:   ${{ secrets.AIRTABLE_API_TOKEN }}
+          AIRTABLE_BASE_ID:     ${{ secrets.AIRTABLE_BASE_ID }}
+          POKE_WEBHOOK_URL:     ${{ secrets.POKE_WEBHOOK_URL }}
+          CEO_CONTACT:          ${{ secrets.CEO_CONTACT }}
+          IMPL_LEAD_CONTACT:    ${{ secrets.IMPL_LEAD_CONTACT }}
+          INSTRUMENTL_API_KEY:  ${{ secrets.INSTRUMENTL_API_KEY }}
+          TIMEZONE:             America/Los_Angeles
+          LOG_LEVEL:            INFO
+        run: |
+          if [ "${{ github.event.inputs.record_id }}" != "" ]; then
+            python scripts/run_pipeline.py --mode ${{ github.event.inputs.mode }} --id ${{ github.event.inputs.record_id }}
+          else
+            python scripts/run_pipeline.py --mode ${{ github.event.inputs.mode }}
+          fi

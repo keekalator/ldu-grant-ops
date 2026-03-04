@@ -1,0 +1,88 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  darkMode: "class",
+  content: [
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        // ── Page ────────────────────────────────────────────────────
+        page:    "#1565e8",   // royal blue backdrop
+        canvas:  "#1254c8",   // deeper blue for depth
+        // ── Cards ───────────────────────────────────────────────────
+        card:    "#fffbf0",   // warm cream card
+        cardAlt: "#ffffff",   // pure white elevated card
+        ink:     "#0a0a1a",   // near-black for borders/text
+        // ── Brand neons ─────────────────────────────────────────────
+        pink:    "#ff1e78",
+        yellow:  "#ffe100",
+        lime:    "#00d94e",
+        cyan:    "#00d4ff",
+        purple:  "#7c3aed",
+        orange:  "#ff6b35",
+        red:     "#ff3232",
+        // ── Status ──────────────────────────────────────────────────
+        status: {
+          prospect:  "#7c3aed",
+          writing:   "#ff6b35",
+          review:    "#1565e8",
+          submitted: "#00a83a",
+          awarded:   "#ffa500",
+          declined:  "#888899",
+        },
+      },
+      fontFamily: {
+        display: ["Orbitron", "sans-serif"],
+        body:    ["Inter", "system-ui", "sans-serif"],
+      },
+      // Pixel-shadow utility (offset hard shadow = retro game UI)
+      boxShadow: {
+        "px":     "3px 3px 0 #0a0a1a",
+        "px-sm":  "2px 2px 0 #0a0a1a",
+        "px-lg":  "5px 5px 0 #0a0a1a",
+        "px-pink":   "3px 3px 0 #ff1e78",
+        "px-yellow": "3px 3px 0 #ffe100",
+        "px-lime":   "3px 3px 0 #00d94e",
+        "px-cyan":   "3px 3px 0 #00d4ff",
+        "px-purple": "3px 3px 0 #7c3aed",
+        "card": "4px 4px 0 #0a0a1a",
+        "card-hover": "6px 6px 0 #0a0a1a",
+      },
+      borderRadius: {
+        "2xl": "1rem",
+        "3xl": "1.5rem",
+        "4xl": "2rem",
+      },
+      animation: {
+        "blink":      "blink 1s step-end infinite",
+        "slide-up":   "slideUp 0.2s ease-out",
+        "bounce-in":  "bounceIn 0.3s cubic-bezier(0.175,0.885,0.32,1.275)",
+        "shimmer":    "shimmer 1.5s linear infinite",
+        "float":      "float 3s ease-in-out infinite",
+      },
+      keyframes: {
+        blink: { "0%,100%": { opacity: "1" }, "50%": { opacity: "0" } },
+        slideUp: {
+          "0%":   { transform: "translateY(10px)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
+        bounceIn: {
+          "0%":   { transform: "scale(0.8)", opacity: "0" },
+          "100%": { transform: "scale(1)",   opacity: "1" },
+        },
+        shimmer: {
+          "0%":   { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
+        float: {
+          "0%,100%": { transform: "translateY(0)" },
+          "50%":     { transform: "translateY(-4px)" },
+        },
+      },
+    },
+  },
+  plugins: [],
+};
