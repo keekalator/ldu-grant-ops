@@ -219,7 +219,7 @@ function OnboardingModal({ onSelect }: { onSelect: (m: TeamMember) => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-[999] flex flex-col items-center px-4 py-6 overflow-y-auto justify-start pt-8"
+      className="fixed inset-0 z-[999] flex flex-col items-center px-4 overflow-y-auto justify-start pt-8 pb-10"
       style={{
         background: "linear-gradient(160deg, #0d0030 0%, #1565e8 50%, #001a6e 100%)",
       }}
@@ -233,12 +233,14 @@ function OnboardingModal({ onSelect }: { onSelect: (m: TeamMember) => void }) {
 
       {/* Header */}
       <div className="relative text-center mb-6 max-w-sm w-full">
-        {/* LDU badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border-[2.5px] border-[#fffbf0] mb-4"
-          style={{ background: "rgba(255,251,240,0.1)" }}>
-          <span className="text-[10px] font-black text-[#fffbf0] tracking-[0.3em]"
-            style={{ fontFamily: "Orbitron, sans-serif" }}>LDU GRANT OPS</span>
-        </div>
+        {/* LDU pixel shield icon */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/icons/icon-192.png"
+          alt="LDU"
+          className="w-16 h-16 mx-auto mb-3 rounded-xl border-[3px] border-[#fffbf0]"
+          style={{ boxShadow: "4px 4px 0 #0a0a1a" }}
+        />
 
         <h1 className="text-2xl font-black text-[#fffbf0] leading-tight mb-2"
           style={{ fontFamily: "Orbitron, sans-serif",
@@ -250,7 +252,7 @@ function OnboardingModal({ onSelect }: { onSelect: (m: TeamMember) => void }) {
           YOUR ACTIONS WILL BE LOGGED UNDER YOUR NAME
         </p>
 
-        {/* Blinking cursor decoration */}
+        {/* Blinking dots */}
         <div className="flex justify-center gap-1 mt-3">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="w-2 h-2 rounded-sm border border-[#fffbf0] animate-pulse"
@@ -260,9 +262,9 @@ function OnboardingModal({ onSelect }: { onSelect: (m: TeamMember) => void }) {
         </div>
       </div>
 
-      {/* Character cards */}
-      <div className="flex flex-col gap-3 w-full max-w-sm relative">
-        {CHARACTERS.map(({ member, charId, class: cls, tagline, stats, accent, badge, glow }) => {
+      {/* Character cards — full-width image cards */}
+      <div className="flex flex-col gap-4 w-full max-w-sm relative">
+        {CHARACTERS.map(({ member, charId, accent, glow }) => {
           const isHovered = hovered === charId;
           return (
             <button
@@ -270,65 +272,33 @@ function OnboardingModal({ onSelect }: { onSelect: (m: TeamMember) => void }) {
               onClick={() => onSelect(member as TeamMember)}
               onMouseEnter={() => setHovered(charId)}
               onMouseLeave={() => setHovered(null)}
-              className="w-full text-left rounded-2xl border-[3px] border-[#0a0a1a] overflow-hidden transition-all duration-100 active:translate-y-[3px] active:shadow-none"
+              className="w-full rounded-2xl border-[3px] border-[#0a0a1a] overflow-hidden transition-all duration-100 active:translate-y-[3px] active:shadow-none focus:outline-none"
               style={{
-                background: member.bg,
                 boxShadow: isHovered
                   ? `6px 6px 0 ${accent}, 0 0 30px ${glow}`
                   : `4px 4px 0 ${accent}`,
                 transform: isHovered ? "translateY(-2px)" : "none",
               }}
             >
-              <div className="flex items-stretch">
-                {/* Left accent stripe */}
-                <div className="w-1.5 shrink-0" style={{ background: accent }} />
+              {/* Full character card image */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`/characters/${charId}.png`}
+                alt={member.id}
+                className="w-full block"
+                style={{ imageRendering: "pixelated" }}
+              />
 
-                {/* Character sprite panel */}
-                <div className="w-20 shrink-0 flex items-center justify-center py-3 px-2 border-r-[2px] border-[#0a0a1a]"
-                  style={{ background: `linear-gradient(180deg, ${member.bg} 0%, rgba(255,255,255,0.6) 100%)` }}>
-                  <CharacterSprite charId={charId} color={accent} size={56} />
-                </div>
-
-                {/* Info */}
-                <div className="flex-1 min-w-0 p-3">
-                  {/* Name row */}
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-[8px] font-black px-2 py-0.5 rounded-md border-[1.5px] border-[#0a0a1a] text-white"
-                      style={{ fontFamily: "Orbitron, sans-serif",
-                        background: accent, boxShadow: `1px 1px 0 #0a0a1a` }}>
-                      {cls}
-                    </span>
-                    <span className="text-[8px] font-black px-2 py-0.5 rounded-md border-[1.5px] border-[#0a0a1a]"
-                      style={{ fontFamily: "Orbitron, sans-serif",
-                        background: "#ffffff", color: accent }}>
-                      {badge}
-                    </span>
-                  </div>
-
-                  <p className="text-[11px] font-black text-[#0a0a1a] mb-0.5"
-                    style={{ fontFamily: "Orbitron, sans-serif" }}>
-                    {member.id.split(" (")[0].toUpperCase()}
-                  </p>
-                  <p className="text-[9px] text-[#555566] leading-tight mb-2">{tagline}</p>
-
-                  {/* Stat bars */}
-                  <div className="space-y-0.5">
-                    {Object.entries(stats).map(([key, val]) => (
-                      <StatBar key={key} label={key} value={val} color={accent} />
-                    ))}
-                  </div>
-                </div>
-
-                {/* Select arrow */}
-                <div className="self-center pr-3 shrink-0">
-                  <div className="w-8 h-8 rounded-xl border-[2px] border-[#0a0a1a] flex items-center justify-center"
-                    style={{ background: isHovered ? accent : "#ffffff",
-                      boxShadow: `2px 2px 0 ${accent}`,
-                      transition: "all 0.1s" }}>
-                    <PixelIcon name="play" size={14}
-                      color={isHovered ? "#ffffff" : accent} />
-                  </div>
-                </div>
+              {/* Tap-to-select footer */}
+              <div
+                className="w-full py-2 px-4 flex items-center justify-between border-t-[2px] border-[#0a0a1a]"
+                style={{ background: accent }}
+              >
+                <span className="text-[10px] font-black text-white tracking-widest"
+                  style={{ fontFamily: "Orbitron, sans-serif" }}>
+                  TAP TO SELECT
+                </span>
+                <PixelIcon name="play" size={14} color="#ffffff" />
               </div>
             </button>
           );
@@ -336,9 +306,9 @@ function OnboardingModal({ onSelect }: { onSelect: (m: TeamMember) => void }) {
       </div>
 
       {/* Footer */}
-      <p className="text-[8px] text-[#fffbf0] opacity-40 mt-5 text-center tracking-widest"
+      <p className="text-[8px] text-[#fffbf0] opacity-40 mt-6 text-center tracking-widest"
         style={{ fontFamily: "Orbitron, sans-serif" }}>
-        PRESS START · YOU CAN SWITCH ANYTIME USING THE ? BUTTON
+        PRESS START · SWITCH ANYTIME VIA THE ? BUTTON
       </p>
     </div>
   );
