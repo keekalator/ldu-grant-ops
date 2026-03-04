@@ -32,7 +32,6 @@ interface AirtableListResponse {
 
 async function airtableFetch(path: string, options?: RequestInit) {
   const url = `${BASE_URL}/${BASE_ID}/${path}`;
-  const isWrite = options?.method && options.method !== "GET";
   const res = await fetch(url, {
     ...options,
     headers: {
@@ -40,9 +39,8 @@ async function airtableFetch(path: string, options?: RequestInit) {
       "Content-Type": "application/json",
       ...(options?.headers ?? {}),
     },
-    // Writes must never be cached — reads use a short cache for SSR
-    cache: isWrite ? "no-store" : undefined,
-    next: isWrite ? undefined : { revalidate: 30 },
+    // Never cache — this is a real-time ops dashboard; stale data causes bugs
+    cache: "no-store",
   });
 
   if (!res.ok) {
