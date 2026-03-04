@@ -79,7 +79,8 @@ async function saveplan(id: string, plan: Plan) {
 function buildPrompt(fields: Record<string, unknown>): string {
   const lines: string[] = [];
   if (fields["Grant Name"])          lines.push(`Grant Name: ${fields["Grant Name"]}`);
-  if (fields["Funder Name"])         lines.push(`Funder: ${fields["Funder Name"]}`);
+  const funder = fields["Funder"] ?? fields["Funder Name"];
+  if (funder)                        lines.push(`Funder: ${funder}`);
   if (fields["Description"])         lines.push(`Description: ${fields["Description"]}`);
   if (fields["Pillar"])              lines.push(`LDU Pillars: ${(fields["Pillar"] as string[]).join(", ")}`);
   if (fields["Award Amount Range"])  lines.push(`Award Amount: $${Number(fields["Award Amount Range"]).toLocaleString()}`);

@@ -47,6 +47,7 @@ export interface Opportunity {
     Source?: string;
     Notes?: string;
     "Score"?: number;
+    "Weighted Score"?: number;
     "Mission Fit"?: number;
     "Win Probability"?: number;
     "Timeline Fit"?: number;
@@ -56,7 +57,8 @@ export interface Opportunity {
     "Last Modified"?: string;
     // Extended detail fields
     "Description"?: string;
-    "Funder Name"?: string;
+    "Funder Name"?: string;   // legacy alias
+    "Funder"?: string;        // actual Airtable field name
     "Funder Website"?: string;
     "Eligibility Notes"?: string;
     "Why We Qualify"?: string;

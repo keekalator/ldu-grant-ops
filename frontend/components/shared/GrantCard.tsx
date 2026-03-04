@@ -40,7 +40,7 @@ export default function GrantCard({ opportunity, compact = false, onClick }: Gra
   const pillar     = fields.Pillar?.[0];
   const priority   = fields.Priority as Priority | undefined;
   const entity     = fields["Submitting Entity"];
-  const funderName = fields["Funder Name"];
+  const funderName = fields["Funder"] ?? fields["Funder Name"];
 
   const cfg     = STATUS_CONFIG[status] ?? STATUS_CONFIG.Prospect;
   const entCfg  = getEntityStyle(entity);

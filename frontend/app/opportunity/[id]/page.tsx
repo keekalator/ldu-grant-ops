@@ -286,8 +286,8 @@ async function OpportunityDetail({ id }: { id: string }) {
             <EditRow icon="building" label="FUNDER">
               <FieldEditor
                 opportunityId={opp.id}
-                fieldName="Funder Name"
-                value={fields["Funder Name"]}
+                fieldName="Funder"
+                value={fields["Funder"] ?? fields["Funder Name"]}
                 type="text"
                 placeholder="Funder organization name"
                 emptyLabel="Tap to add funder name"
