@@ -219,95 +219,96 @@ function OnboardingModal({ onSelect }: { onSelect: (m: TeamMember) => void }) {
   const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
 
   return (
+    // Outer container IS the scroll — most reliable on iOS Safari / PWA
     <div
-      className="fixed inset-0 z-[9999] flex flex-col"
+      className="fixed inset-0 z-[9999] overflow-y-scroll overflow-x-hidden"
       style={{
         background: "linear-gradient(160deg, #0d0030 0%, #1565e8 50%, #001a6e 100%)",
+        WebkitOverflowScrolling: "touch",
+        overscrollBehavior: "contain",
       }}
     >
-      {/* Pixel grid background overlay */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.06]"
+      {/* Pixel grid background — fixed so it doesn't scroll */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.06]"
         style={{
           backgroundImage: "linear-gradient(#fffbf0 1px, transparent 1px), linear-gradient(90deg, #fffbf0 1px, transparent 1px)",
           backgroundSize: "24px 24px",
         }} />
 
-      {/* Header — fixed at top */}
-      <div className="relative text-center pt-6 pb-3 px-4 shrink-0">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/icons/icon-192.png"
-          alt="LDU"
-          className="w-14 h-14 mx-auto mb-2 rounded-xl border-[3px] border-[#fffbf0]"
-          style={{ boxShadow: "4px 4px 0 #0a0a1a" }}
-        />
-        <h1 className="text-xl font-black text-[#fffbf0] leading-tight"
-          style={{ fontFamily: "Orbitron, sans-serif",
-            textShadow: "3px 3px 0 #0a0a1a" }}>
-          SELECT YOUR CHARACTER
-        </h1>
-      </div>
+      {/* All content in one scrollable flow */}
+      <div className="relative px-4 pt-6 pb-20 flex flex-col gap-3 max-w-sm mx-auto">
 
-      {/* Scrollable area — min-h-0 is critical for iOS scroll */}
-      <div
-        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 pb-16"
-        style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}
-      >
-        <div className="flex flex-col gap-3 max-w-sm mx-auto">
-          {CHARACTERS.map(({ member, charId, accent, glow }) => {
-            const isHovered = hovered === charId;
-            const imgFailed = imgErrors[charId];
-            return (
-              <button
-                key={member.id}
-                onClick={() => onSelect(member as TeamMember)}
-                onMouseEnter={() => setHovered(charId)}
-                onMouseLeave={() => setHovered(null)}
-                className="w-full rounded-2xl border-[3px] border-[#0a0a1a] overflow-hidden transition-all duration-100 active:translate-y-[2px] active:shadow-none focus:outline-none shrink-0"
-                style={{
-                  boxShadow: isHovered
-                    ? `6px 6px 0 ${accent}, 0 0 30px ${glow}`
-                    : `4px 4px 0 ${accent}`,
-                  transform: isHovered ? "translateY(-2px)" : "none",
-                }}
-              >
-                {/* Card content — image or fallback */}
-                <div className="min-h-[120px] flex items-center justify-center relative bg-[#fffbf0]/10">
-                  {imgFailed ? (
-                    <div className="flex flex-col items-center gap-2 py-4">
-                      <CharacterSprite charId={charId} color={accent} size={56} />
-                      <span className="text-sm font-black text-[#fffbf0]"
-                        style={{ fontFamily: "Orbitron, sans-serif" }}>
-                        {member.id.split(" (")[0].toUpperCase()}
-                      </span>
-                    </div>
-                  ) : (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={`/characters/${charId}.png`}
-                      alt={member.id}
-                      className="w-full block h-[180px] object-cover object-top"
-                      style={{ imageRendering: "pixelated" }}
-                      onError={() => setImgErrors((e) => ({ ...e, [charId]: true }))}
-                    />
-                  )}
-                </div>
-
-                <div
-                  className="w-full py-2 px-4 flex items-center justify-between border-t-[2px] border-[#0a0a1a]"
-                  style={{ background: accent }}
-                >
-                  <span className="text-[10px] font-black text-white tracking-widest"
-                    style={{ fontFamily: "Orbitron, sans-serif" }}>
-                    TAP TO SELECT
-                  </span>
-                  <PixelIcon name="play" size={14} color="#ffffff" />
-                </div>
-              </button>
-            );
-          })}
+        {/* Header */}
+        <div className="text-center pb-1">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/icons/icon-192.png"
+            alt="LDU"
+            className="w-14 h-14 mx-auto mb-2 rounded-xl border-[3px] border-[#fffbf0]"
+            style={{ boxShadow: "4px 4px 0 #0a0a1a" }}
+          />
+          <h1 className="text-xl font-black text-[#fffbf0] leading-tight"
+            style={{ fontFamily: "Orbitron, sans-serif",
+              textShadow: "3px 3px 0 #0a0a1a" }}>
+            SELECT YOUR CHARACTER
+          </h1>
         </div>
-        <p className="text-[8px] text-[#fffbf0] opacity-40 mt-4 text-center tracking-widest"
+
+        {/* Character cards */}
+        {CHARACTERS.map(({ member, charId, accent, glow }) => {
+          const isHovered = hovered === charId;
+          const imgFailed = imgErrors[charId];
+          return (
+            <button
+              key={member.id}
+              onClick={() => onSelect(member as TeamMember)}
+              onMouseEnter={() => setHovered(charId)}
+              onMouseLeave={() => setHovered(null)}
+              className="w-full rounded-2xl border-[3px] border-[#0a0a1a] overflow-hidden transition-all duration-100 active:translate-y-[2px] active:shadow-none focus:outline-none"
+              style={{
+                boxShadow: isHovered
+                  ? `6px 6px 0 ${accent}, 0 0 30px ${glow}`
+                  : `4px 4px 0 ${accent}`,
+                transform: isHovered ? "translateY(-2px)" : "none",
+              }}
+            >
+              {/* Card image or pixel fallback */}
+              <div className="min-h-[120px] flex items-center justify-center relative bg-[#fffbf0]/10">
+                {imgFailed ? (
+                  <div className="flex flex-col items-center gap-2 py-4">
+                    <CharacterSprite charId={charId} color={accent} size={56} />
+                    <span className="text-sm font-black text-[#fffbf0]"
+                      style={{ fontFamily: "Orbitron, sans-serif" }}>
+                      {member.id.split(" (")[0].toUpperCase()}
+                    </span>
+                  </div>
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={`/characters/${charId}.png`}
+                    alt={member.id}
+                    className="w-full block h-[180px] object-cover object-top"
+                    style={{ imageRendering: "pixelated" }}
+                    onError={() => setImgErrors((e) => ({ ...e, [charId]: true }))}
+                  />
+                )}
+              </div>
+
+              <div
+                className="w-full py-2 px-4 flex items-center justify-between border-t-[2px] border-[#0a0a1a]"
+                style={{ background: accent }}
+              >
+                <span className="text-[10px] font-black text-white tracking-widest"
+                  style={{ fontFamily: "Orbitron, sans-serif" }}>
+                  TAP TO SELECT
+                </span>
+                <PixelIcon name="play" size={14} color="#ffffff" />
+              </div>
+            </button>
+          );
+        })}
+
+        <p className="text-[8px] text-[#fffbf0] opacity-40 text-center tracking-widest"
           style={{ fontFamily: "Orbitron, sans-serif" }}>
           SWITCH ANYTIME VIA THE ? BUTTON
         </p>
