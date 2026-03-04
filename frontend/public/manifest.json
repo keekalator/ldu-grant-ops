@@ -1,11 +1,11 @@
 {
-  "name": "LDU Grant Operations",
+  "name": "LDU Grant Ops",
   "short_name": "LDU Grants",
   "description": "Life Development University — Grant Management Platform",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#0a0a0a",
+  "background_color": "#1565e8",
+  "theme_color": "#1565e8",
   "orientation": "portrait-primary",
   "categories": ["productivity", "business"],
   "icons": [
