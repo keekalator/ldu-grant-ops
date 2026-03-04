@@ -220,7 +220,7 @@ function OnboardingModal({ onSelect }: { onSelect: (m: TeamMember) => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-[999] flex flex-col"
+      className="fixed inset-0 z-[9999] flex flex-col"
       style={{
         background: "linear-gradient(160deg, #0d0030 0%, #1565e8 50%, #001a6e 100%)",
       }}
@@ -250,8 +250,8 @@ function OnboardingModal({ onSelect }: { onSelect: (m: TeamMember) => void }) {
 
       {/* Scrollable area — min-h-0 is critical for iOS scroll */}
       <div
-        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 pb-8"
-        style={{ WebkitOverflowScrolling: "touch" }}
+        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 pb-16"
+        style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}
       >
         <div className="flex flex-col gap-3 max-w-sm mx-auto">
           {CHARACTERS.map(({ member, charId, accent, glow }) => {

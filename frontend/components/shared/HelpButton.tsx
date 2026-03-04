@@ -230,8 +230,11 @@ function getSOPForPage(roleId: string, pathname: string) {
 
 export default function HelpButton() {
   const pathname = usePathname();
-  const { user, setUser } = useUser();
+  const { user, needsSetup, setUser } = useUser();
   const [open, setOpen] = useState(false);
+
+  // Don't render during character select — keep the screen clean
+  if (needsSetup) return null;
 
   const roleId     = user ? toHelpId(user.id) : null;
   const selectedTeam = user
