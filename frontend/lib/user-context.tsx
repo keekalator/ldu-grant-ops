@@ -219,24 +219,29 @@ function OnboardingModal({ onSelect }: { onSelect: (m: TeamMember) => void }) {
   const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
 
   return (
-    // Outer container IS the scroll — most reliable on iOS Safari / PWA
+    // iOS-reliable modal pattern:
+    // - outer fixed div: overflow hidden (clips, no scroll)
+    // - inner absolute div: overflow-y scroll (actually scrolls on iOS)
     <div
-      className="fixed inset-0 z-[9999] overflow-y-scroll overflow-x-hidden"
+      className="fixed inset-0 z-[9999] overflow-hidden"
       style={{
         background: "linear-gradient(160deg, #0d0030 0%, #1565e8 50%, #001a6e 100%)",
-        WebkitOverflowScrolling: "touch",
-        overscrollBehavior: "contain",
       }}
     >
-      {/* Pixel grid background — fixed so it doesn't scroll */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.06]"
+      {/* Pixel grid background */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.06]"
         style={{
           backgroundImage: "linear-gradient(#fffbf0 1px, transparent 1px), linear-gradient(90deg, #fffbf0 1px, transparent 1px)",
           backgroundSize: "24px 24px",
         }} />
 
+      {/* Scrollable inner — absolute fill, this is what iOS actually scrolls */}
+      <div
+        className="absolute inset-0 overflow-y-scroll"
+        style={{ WebkitOverflowScrolling: "touch" }}
+      >
       {/* All content in one scrollable flow */}
-      <div className="relative px-4 pt-6 pb-20 flex flex-col gap-3 max-w-sm mx-auto">
+      <div className="relative px-4 pt-6 pb-24 flex flex-col gap-3 max-w-sm mx-auto">
 
         {/* Header */}
         <div className="text-center pb-1">
@@ -312,6 +317,7 @@ function OnboardingModal({ onSelect }: { onSelect: (m: TeamMember) => void }) {
           style={{ fontFamily: "Orbitron, sans-serif" }}>
           SWITCH ANYTIME VIA THE ? BUTTON
         </p>
+      </div>
       </div>
     </div>
   );
