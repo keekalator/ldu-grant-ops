@@ -1,4 +1,3 @@
-import { getBaseUrl } from "@/lib/base-url";
 import { Suspense } from "react";
 import Link from "next/link";
 import Header from "@/components/layout/Header";
@@ -6,17 +5,19 @@ import UrgentAlerts from "@/components/dashboard/UrgentAlerts";
 import PipelineSnapshot from "@/components/dashboard/PipelineSnapshot";
 import GrantCard from "@/components/shared/GrantCard";
 import PixelIcon from "@/components/shared/PixelIcon";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, computePipelineStats } from "@/lib/utils";
+import { getOpportunities } from "@/lib/airtable";
 import type { PixelIconName } from "@/components/shared/PixelIcon";
 import type { PipelineStats, Opportunity } from "@/types";
 
+/** Fetches stats directly from Airtable (no self-fetch) — works on Vercel. */
 async function getDashboardStats(): Promise<PipelineStats | null> {
   try {
-    const baseUrl = getBaseUrl();
-    const res = await fetch(`${baseUrl}/api/stats`, { next: { revalidate: 60 } });
-    if (!res.ok) return null;
-    return res.json();
-  } catch { return null; }
+    const records = await getOpportunities({ maxRecords: 300 });
+    return computePipelineStats(records as unknown as Opportunity[]);
+  } catch {
+    return null;
+  }
 }
 
 // ─── Stat Block ───────────────────────────────────────────────────────────────
@@ -145,7 +146,9 @@ async function DashboardContent() {
         <div className="retro-card-pink p-6 text-center">
           <PixelIcon name="alert" size={32} color="#ff1e78" className="mx-auto mb-3" />
           <p className="font-black text-[#ff1e78]" style={{ fontFamily: "Orbitron, sans-serif" }}>CONNECTION FAILED</p>
-          <p className="text-xs text-[#0a0a1a] opacity-60 mt-1">Check .env.local config</p>
+          <p className="text-xs text-[#0a0a1a] opacity-60 mt-1">
+            Add AIRTABLE_API_TOKEN & AIRTABLE_BASE_ID in Vercel → Settings → Environment Variables
+          </p>
         </div>
       </div>
     );

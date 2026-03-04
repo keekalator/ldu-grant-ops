@@ -1,23 +1,17 @@
-import { getBaseUrl } from "@/lib/base-url";
 import { Suspense } from "react";
 import Link from "next/link";
 import Header from "@/components/layout/Header";
 import GrantCard from "@/components/shared/GrantCard";
 import PixelIcon from "@/components/shared/PixelIcon";
 import { daysUntilDeadline } from "@/lib/utils";
+import { getWritingQueue as fetchWritingQueue } from "@/lib/airtable";
 import type { Opportunity } from "@/types";
 
 async function getWritingQueue(): Promise<Opportunity[]> {
   try {
-    const baseUrl = getBaseUrl();
-    const [r1, r2] = await Promise.all([
-      fetch(`${baseUrl}/api/opportunities?status=Writing`,   { next: { revalidate: 60 } }),
-      fetch(`${baseUrl}/api/opportunities?status=In Review`, { next: { revalidate: 60 } }),
-    ]);
-    const d1 = r1.ok ? await r1.json() : { records: [] };
-    const d2 = r2.ok ? await r2.json() : { records: [] };
-    return [...(d1.records ?? []), ...(d2.records ?? [])].sort(
-      (a: Opportunity, b: Opportunity) => daysUntilDeadline(a.fields.Deadline) - daysUntilDeadline(b.fields.Deadline)
+    const records = await fetchWritingQueue();
+    return (records as unknown as Opportunity[]).sort(
+      (a, b) => daysUntilDeadline(a.fields.Deadline) - daysUntilDeadline(b.fields.Deadline)
     );
   } catch { return []; }
 }

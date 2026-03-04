@@ -1,28 +1,22 @@
-import { getBaseUrl } from "@/lib/base-url";
 import { Suspense } from "react";
 import Link from "next/link";
 import Header from "@/components/layout/Header";
 import PixelIcon from "@/components/shared/PixelIcon";
 import { formatCurrency, formatDeadline, abbreviatePillar } from "@/lib/utils";
+import { getOpportunitiesByStatus } from "@/lib/airtable";
 import type { Opportunity } from "@/types";
 
 async function getAwardedGrants(): Promise<Opportunity[]> {
   try {
-    const baseUrl = getBaseUrl();
-    const res = await fetch(`${baseUrl}/api/opportunities?status=Awarded`, { next: { revalidate: 60 } });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return (data.records ?? []) as Opportunity[];
+    const records = await getOpportunitiesByStatus("Awarded");
+    return records as unknown as Opportunity[];
   } catch { return []; }
 }
 
 async function getSubmittedGrants(): Promise<Opportunity[]> {
   try {
-    const baseUrl = getBaseUrl();
-    const res = await fetch(`${baseUrl}/api/opportunities?status=Submitted`, { next: { revalidate: 60 } });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return (data.records ?? []) as Opportunity[];
+    const records = await getOpportunitiesByStatus("Submitted");
+    return records as unknown as Opportunity[];
   } catch { return []; }
 }
 

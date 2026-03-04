@@ -1,4 +1,3 @@
-import { getBaseUrl } from "@/lib/base-url";
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -10,14 +9,13 @@ import WritingPlanPanel  from "@/components/opportunity/WritingPlanPanel";
 import PixelIcon      from "@/components/shared/PixelIcon";
 import { formatCurrency, formatDeadline, daysUntilDeadline, abbreviatePillar } from "@/lib/utils";
 import { getEntityStyle } from "@/lib/entities";
+import { getRecord } from "@/lib/airtable";
 import type { Opportunity, Priority } from "@/types";
 
 async function getOpportunity(id: string): Promise<Opportunity | null> {
   try {
-    const baseUrl = getBaseUrl();
-    const res = await fetch(`${baseUrl}/api/opportunities/${id}`, { cache: "no-store" });
-    if (!res.ok) return null;
-    return res.json() as Promise<Opportunity>;
+    const record = await getRecord("Opportunities", id);
+    return { id: record.id, fields: record.fields } as Opportunity;
   } catch { return null; }
 }
 

@@ -1,7 +1,7 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { formatDistanceToNow, parseISO, differenceInDays, format } from "date-fns";
-import type { GrantStatus, Priority, Opportunity, UrgentAlert } from "@/types";
+import type { GrantStatus, Priority, Opportunity, UrgentAlert, PipelineStats } from "@/types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -115,4 +115,49 @@ export function buildUrgentAlerts(opportunities: Opportunity[]): UrgentAlert[] {
   }
 
   return alerts.sort((a, b) => a.daysUntil - b.daysUntil);
+}
+
+// ─── Pipeline Stats (shared for page + API) ───────────────────────────────────
+
+export function computePipelineStats(opportunities: Opportunity[]): PipelineStats {
+  const byStatus: Record<string, number> = {};
+  const byPillar: Record<string, number> = {};
+  let totalRequested = 0;
+  let totalAwarded = 0;
+  const upcomingDeadlines: Opportunity[] = [];
+  const writingQueue: Opportunity[] = [];
+
+  for (const opp of opportunities) {
+    const status = opp.fields.Status ?? "Prospect";
+    byStatus[status] = (byStatus[status] ?? 0) + 1;
+
+    const pillars = opp.fields.Pillar ?? [];
+    for (const p of pillars) byPillar[p] = (byPillar[p] ?? 0) + 1;
+
+    const amount = opp.fields["Award Amount Range"] ?? 0;
+    if (status === "Awarded") totalAwarded += amount;
+    if (!["Declined", "Rejected"].includes(status)) totalRequested += amount;
+
+    if (opp.fields.Deadline) {
+      const days = Math.floor(
+        (new Date(opp.fields.Deadline).getTime() - Date.now()) / 86400000
+      );
+      if (days >= 0 && days <= 30 && !["Awarded", "Declined", "Rejected"].includes(status)) {
+        upcomingDeadlines.push(opp);
+      }
+    }
+
+    if (["Writing", "In Review"].includes(status)) writingQueue.push(opp);
+  }
+
+  return {
+    total: opportunities.length,
+    byStatus,
+    byPillar,
+    totalRequested,
+    totalAwarded,
+    upcomingDeadlines: upcomingDeadlines.slice(0, 5),
+    writingQueue: writingQueue.slice(0, 5),
+    urgentAlerts: buildUrgentAlerts(opportunities).slice(0, 8),
+  };
 }

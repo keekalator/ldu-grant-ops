@@ -1,17 +1,14 @@
-import { getBaseUrl } from "@/lib/base-url";
 import { Suspense } from "react";
 import Header from "@/components/layout/Header";
 import KanbanBoard from "@/components/pipeline/KanbanBoard";
 import PixelIcon from "@/components/shared/PixelIcon";
+import { getOpportunities as fetchOpportunities } from "@/lib/airtable";
 import type { Opportunity } from "@/types";
 
 async function getOpportunities(): Promise<Opportunity[]> {
   try {
-    const baseUrl = getBaseUrl();
-    const res = await fetch(`${baseUrl}/api/opportunities`, { next: { revalidate: 60 } });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return (data.records ?? []) as Opportunity[];
+    const records = await fetchOpportunities();
+    return records as unknown as Opportunity[];
   } catch { return []; }
 }
 
