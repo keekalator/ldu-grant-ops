@@ -7,6 +7,8 @@ import FieldEditor       from "@/components/opportunity/FieldEditor";
 import ActionGuide       from "@/components/opportunity/ActionGuide";
 import WritingPlanPanel  from "@/components/opportunity/WritingPlanPanel";
 import WritingWorkflow   from "@/components/opportunity/WritingWorkflow";
+import EnrichPanel       from "@/components/opportunity/EnrichPanel";
+import DisqualifyButton  from "@/components/opportunity/DisqualifyButton";
 import PixelIcon      from "@/components/shared/PixelIcon";
 import { formatCurrency, formatDeadline, daysUntilDeadline, abbreviatePillar } from "@/lib/utils";
 import { getEntityStyle } from "@/lib/entities";
@@ -115,8 +117,10 @@ async function OpportunityDetail({ id }: { id: string }) {
   const priority    = fields.Priority as Priority | undefined;
   const source      = fields.Source;
   const notes       = (fields.Notes as string) ?? "";
-  const writingPlan = (fields["Writing Plan"] as string | undefined) ?? null;
-  const score       = fields.Score;
+  const writingPlan   = (fields["Writing Plan"] as string | undefined) ?? null;
+  const dqReason      = (fields["Disqualification Reason"] as string | undefined) ?? null;
+  const isDisqualified = status === "Disqualified";
+  const score         = fields["Weighted Score"] ?? fields.Score;
   const missionFit  = fields["Mission Fit"];
   const winProb     = fields["Win Probability"];
   const entCfg      = getEntityStyle(entity);
@@ -126,11 +130,36 @@ async function OpportunityDetail({ id }: { id: string }) {
   const PILLAR_OPTIONS = ["Capital Campaign","Programming & Operations","Studio WELEH","Agricultural Extension","Founder & Enterprise","Textile Sustainability"];
 
   return (
-    <div className="min-h-screen pb-32" style={{ background: "#1565e8" }}>
+    <div className="min-h-screen pb-32" style={{ background: isDisqualified ? "#2a0a0a" : "#1565e8" }}>
+
+      {/* ── Disqualified banner ──────────────────────────── */}
+      {isDisqualified && (
+        <div className="px-4 pt-4 max-w-2xl mx-auto">
+          <div
+            className="rounded-2xl border-[2.5px] border-[#ff1e78] p-4 flex gap-3"
+            style={{ background: "#3d0012", boxShadow: "4px 4px 0 #ff1e78" }}
+          >
+            <div className="w-8 h-8 rounded-full border-[2px] border-[#ff1e78] flex items-center justify-center shrink-0"
+              style={{ background: "#ff1e78" }}>
+              <PixelIcon name="cross" size={14} color="#fff" />
+            </div>
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-widest text-[#ff1e78] mb-1"
+                style={{ fontFamily: "Orbitron, sans-serif" }}>DISQUALIFIED — NOT PURSUING</p>
+              {dqReason && (
+                <p className="text-sm text-[#ffaaaa] leading-snug">{dqReason}</p>
+              )}
+              {!dqReason && (
+                <p className="text-sm text-[#ff6666] opacity-60">No reason recorded.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Sticky header ───────────────────────────────── */}
       <div className="sticky top-0 z-40 px-4 py-3 max-w-2xl mx-auto"
-        style={{ background: "#fffbf0", borderBottom: "3px solid #0a0a1a" }}>
+        style={{ background: isDisqualified ? "#3d0012" : "#fffbf0", borderBottom: `3px solid ${isDisqualified ? "#ff1e78" : "#0a0a1a"}` }}>
         <div className="flex items-center gap-3">
           <Link href="/"
             className="w-9 h-9 rounded-xl border-[2.5px] border-[#0a0a1a] flex items-center justify-center transition-all active:translate-y-[2px] shrink-0"
@@ -155,12 +184,18 @@ async function OpportunityDetail({ id }: { id: string }) {
       <div className="px-4 pt-4 max-w-2xl mx-auto space-y-4">
 
         {/* ── Hero card ───────────────────────────────────── */}
-        <div className="rounded-2xl border-[2.5px] border-[#0a0a1a] overflow-hidden"
-          style={{ background: "#fffbf0", boxShadow: "5px 5px 0 #0a0a1a" }}>
+        <div className="rounded-2xl border-[2.5px] overflow-hidden"
+          style={{
+            background: isDisqualified ? "#3d0012" : "#fffbf0",
+            borderColor: isDisqualified ? "#ff1e78" : "#0a0a1a",
+            boxShadow: isDisqualified ? "5px 5px 0 #ff1e78" : "5px 5px 0 #0a0a1a",
+            opacity: isDisqualified ? 0.85 : 1,
+          }}>
           {/* Entity top stripe */}
-          <div className="h-2" style={{ background: entCfg.color }} />
+          <div className="h-2" style={{ background: isDisqualified ? "#ff1e78" : entCfg.color }} />
           <div className="p-5">
-            <h2 className="text-lg font-black text-[#0a0a1a] leading-snug mb-3">{name}</h2>
+            <h2 className="text-lg font-black leading-snug mb-3"
+              style={{ color: isDisqualified ? "#ffaaaa" : "#0a0a1a" }}>{name}</h2>
 
             {/* Pillar + priority tags */}
             <div className="flex flex-wrap gap-2 mb-4">
@@ -244,53 +279,39 @@ async function OpportunityDetail({ id }: { id: string }) {
 
         {/* ── Status ───────────────────────────────────────── */}
         <Section icon="pipeline" label="STATUS" iconBg="#b8f0ff">
-          <div className="rounded-2xl border-[2.5px] border-[#0a0a1a] p-4"
+          <div className="rounded-2xl border-[2.5px] border-[#0a0a1a] p-4 space-y-4"
             style={{ background: "#fffbf0", boxShadow: "4px 4px 0 #0066cc" }}>
             <StatusUpdater opportunityId={opp.id} currentStatus={status} existingNotes={notes} />
+            {/* Disqualification reason — editable when disqualified */}
+            {isDisqualified && (
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-[#ff1e78] mb-1"
+                  style={{ fontFamily: "Orbitron, sans-serif" }}>DISQUALIFICATION REASON</p>
+                <FieldEditor
+                  opportunityId={opp.id}
+                  fieldName="Disqualification Reason"
+                  value={dqReason ?? undefined}
+                  type="textarea"
+                  placeholder="Describe why this grant was disqualified…"
+                  emptyLabel="Tap to add disqualification reason"
+                />
+              </div>
+            )}
+            {/* Disqualify / Omit button — only when not already disqualified */}
+            {!isDisqualified && (
+              <DisqualifyButton opportunityId={opp.id} grantName={name} />
+            )}
           </div>
         </Section>
 
-        {/* ── Description ──────────────────────────────────── */}
-        <Section icon="search" label="GRANT DESCRIPTION" iconBg="#e8d4ff">
-          <div className="rounded-2xl border-[2.5px] border-[#0a0a1a] p-4"
-            style={{ background: "#fffbf0", boxShadow: "4px 4px 0 #7c3aed" }}>
-            <FieldEditor
-              opportunityId={opp.id}
-              fieldName="Description"
-              value={fields.Description}
-              type="textarea"
-              placeholder="Describe the grant, its purpose, and key requirements…"
-              emptyLabel="Tap to add a grant description"
-            />
-          </div>
-        </Section>
-
-        {/* ── Eligibility + Qualification ───────────────────── */}
-        <Section icon="check" label="ELIGIBILITY & QUALIFICATION" iconBg="#b8ffda">
-          <div className="rounded-2xl border-[2.5px] border-[#0a0a1a] px-4 py-1"
-            style={{ background: "#fffbf0", boxShadow: "4px 4px 0 #00a83a" }}>
-            <EditRow icon="check" label="ELIGIBLE">
-              <FieldEditor
-                opportunityId={opp.id}
-                fieldName="Eligibility Notes"
-                value={fields["Eligibility Notes"]}
-                type="textarea"
-                placeholder="List key eligibility criteria (501c3, geographic, revenue thresholds…)"
-                emptyLabel="Tap to add eligibility notes"
-              />
-            </EditRow>
-            <EditRow icon="star" label="WHY LDU">
-              <FieldEditor
-                opportunityId={opp.id}
-                fieldName="Why We Qualify"
-                value={fields["Why We Qualify"]}
-                type="textarea"
-                placeholder="Explain why LDU qualifies — mission fit, prior work, demographics…"
-                emptyLabel="Tap to explain why LDU qualifies"
-              />
-            </EditRow>
-          </div>
-        </Section>
+        {/* ── Agent Enrich Panel ──────────────────────────────── */}
+        <EnrichPanel
+          opportunityId={opp.id}
+          initialDescription={fields.Description as string | undefined}
+          initialEligibility={fields["Eligibility Notes"] as string | undefined}
+          initialWhyQualify={fields["Why We Qualify"] as string | undefined}
+          initialFunder={(fields["Funder"] ?? fields["Funder Name"]) as string | undefined}
+        />
 
         {/* ── Funder intel ─────────────────────────────────── */}
         <Section icon="building" label="FUNDER INTEL" iconBg="#fff3a0">

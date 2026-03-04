@@ -114,8 +114,8 @@ async function WritingQueueContent() {
       icon:   "search" as const,
       label:  "REVIEW",
       value:  inReview.length,
-      bg:     "#c8e0ff",
-      shadow: "#0066cc",
+      bg:     inReview.length > 0 ? "#c8e0ff" : "#f0f0f8",
+      shadow: inReview.length > 0 ? "#0066cc" : "#aaaacc",
       href:   "#in-review",
     },
     {
@@ -205,7 +205,7 @@ async function WritingQueueContent() {
         <StageSection
           id="in-review"
           icon="search"
-          label="IN REVIEW"
+          label="READY FOR KIKA — PENDING APPROVAL"
           count={inReview.length}
           accentBg="#c8e0ff"
           accentShadow="#0066cc"

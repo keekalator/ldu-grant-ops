@@ -64,7 +64,8 @@ export interface Opportunity {
     "Why We Qualify"?: string;
     "Materials Needed"?: string;
     "Next Steps"?: string;
-    "Writing Plan"?: string;  // JSON string — parsed by WritingPlanPanel
+    "Writing Plan"?: string;           // JSON string — parsed by WritingPlanPanel
+    "Disqualification Reason"?: string; // set when Status = Disqualified
   };
 }
 
