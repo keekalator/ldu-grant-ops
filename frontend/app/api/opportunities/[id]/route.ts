@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getRecord, updateRecord } from "@/lib/airtable";
 
 // GET /api/opportunities/[id]
@@ -24,6 +25,11 @@ export async function PATCH(
   try {
     const body = await request.json();
     const updated = await updateRecord("Opportunities", params.id, body.fields);
+    // Invalidate cached pages so the next GET reflects the update immediately
+    revalidatePath(`/opportunity/${params.id}`);
+    revalidatePath("/writing-queue");
+    revalidatePath("/pipeline");
+    revalidatePath("/");
     return NextResponse.json(updated);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
