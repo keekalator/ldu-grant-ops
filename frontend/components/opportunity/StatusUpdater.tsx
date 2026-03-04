@@ -5,15 +5,18 @@ import PixelIcon from "@/components/shared/PixelIcon";
 import { useUser } from "@/lib/user-context";
 
 const PIPELINE_STEPS = [
-  { key: "Prospect",    label: "PROSPECT", color: "#7c3aed", bg: "#e8d4ff", icon: "search"   },
-  { key: "Qualifying",  label: "QUALIFY",  color: "#ff6b35", bg: "#ffe8d8", icon: "target"   },
-  { key: "Writing",     label: "WRITING",  color: "#ffb800", bg: "#fff5c0", icon: "quill"    },
-  { key: "In Review",   label: "REVIEW",   color: "#00d4ff", bg: "#b8f0ff", icon: "check"    },
-  { key: "Submitted",   label: "SUBMIT",   color: "#0066cc", bg: "#c8e0ff", icon: "rocket"   },
-  { key: "Awarded",     label: "AWARDED",  color: "#00a83a", bg: "#b8ffda", icon: "trophy"   },
+  { key: "Prospect",      label: "PROSPECT", color: "#7c3aed", bg: "#e8d4ff", icon: "search"  },
+  { key: "Scoring",       label: "SCORING",  color: "#ff6b35", bg: "#ffe8d8", icon: "target"  },
+  { key: "Writing Queue", label: "WRITING",  color: "#ffb800", bg: "#fff5c0", icon: "quill"   },
+  { key: "Active",        label: "REVIEW",   color: "#0066cc", bg: "#c8e0ff", icon: "check"   },
+  { key: "Submitted",     label: "SUBMIT",   color: "#00d4ff", bg: "#b8f0ff", icon: "rocket"  },
+  { key: "Awarded",       label: "AWARDED",  color: "#00a83a", bg: "#b8ffda", icon: "trophy"  },
 ];
 
-const ALL_STATUSES = ["Prospect","Qualifying","Writing","In Review","Submitted","Awarded","Declined","Rejected"];
+const ALL_STATUSES = [
+  "Prospect", "Scoring", "Writing Queue", "Active",
+  "Submitted", "Awarded", "Declined", "Rejected", "Disqualified",
+];
 
 interface Props { opportunityId: string; currentStatus: string; existingNotes?: string; }
 

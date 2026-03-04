@@ -6,6 +6,7 @@ import CommsLog          from "@/components/opportunity/CommsLog";
 import FieldEditor       from "@/components/opportunity/FieldEditor";
 import ActionGuide       from "@/components/opportunity/ActionGuide";
 import WritingPlanPanel  from "@/components/opportunity/WritingPlanPanel";
+import WritingWorkflow   from "@/components/opportunity/WritingWorkflow";
 import PixelIcon      from "@/components/shared/PixelIcon";
 import { formatCurrency, formatDeadline, daysUntilDeadline, abbreviatePillar } from "@/lib/utils";
 import { getEntityStyle } from "@/lib/entities";
@@ -228,6 +229,18 @@ async function OpportunityDetail({ id }: { id: string }) {
 
         {/* ── Action guide — who needs to do what right now ── */}
         <ActionGuide status={status} grantName={name} />
+
+        {/* ── Writing workflow — draft → review → submitted ─── */}
+        {["Writing Queue", "Active", "Submitted"].includes(status) && (
+          <Section icon="quill" label="WRITING PROGRESS" iconBg="#fff5c0">
+            <WritingWorkflow
+              opportunityId={opp.id}
+              currentStatus={status}
+              grantName={name}
+              hasWritingPlan={!!writingPlan}
+            />
+          </Section>
+        )}
 
         {/* ── Status ───────────────────────────────────────── */}
         <Section icon="pipeline" label="STATUS" iconBg="#b8f0ff">
