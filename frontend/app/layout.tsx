@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import BottomNav from "@/components/layout/BottomNav";
 import HelpButton from "@/components/shared/HelpButton";
+import AIChatButton from "@/components/shared/AIChatButton";
 import { UserProvider } from "@/lib/user-context";
 
 export const metadata: Metadata = {
@@ -53,6 +54,7 @@ export default function RootLayout({
             {children}
           </main>
           <HelpButton />
+          <AIChatButton />
           <BottomNav />
         </UserProvider>
       </body>

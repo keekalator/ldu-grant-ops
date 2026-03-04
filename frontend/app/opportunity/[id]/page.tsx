@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import AIChatButton      from "@/components/shared/AIChatButton";
 import StatusUpdater     from "@/components/opportunity/StatusUpdater";
 import CommsLog          from "@/components/opportunity/CommsLog";
 import FieldEditor       from "@/components/opportunity/FieldEditor";
@@ -422,6 +423,9 @@ async function OpportunityDetail({ id }: { id: string }) {
         </Section>
 
       </div>
+
+      {/* Grant-context AI — knows full details of this specific grant */}
+      <AIChatButton grantId={opp.id} grantName={name} />
     </div>
   );
 }
