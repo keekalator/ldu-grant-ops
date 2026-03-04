@@ -149,6 +149,13 @@ async function DashboardContent() {
           <p className="text-xs text-[#0a0a1a] opacity-60 mt-1">
             Add AIRTABLE_API_TOKEN & AIRTABLE_BASE_ID in Vercel → Settings → Environment Variables
           </p>
+          <Link
+            href="/api/health"
+            className="inline-block mt-3 text-[10px] font-bold px-3 py-2 rounded-lg border-[2px] border-[#ff1e78] text-[#ff1e78]"
+            style={{ fontFamily: "Orbitron, sans-serif" }}
+          >
+            Check /api/health for error details →
+          </Link>
         </div>
       </div>
     );

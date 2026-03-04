@@ -4,8 +4,8 @@
  */
 
 const BASE_URL = "https://api.airtable.com/v0";
-const API_TOKEN = process.env.AIRTABLE_API_TOKEN;
-const BASE_ID = process.env.AIRTABLE_BASE_ID;
+const API_TOKEN = process.env.AIRTABLE_API_TOKEN?.trim();
+const BASE_ID = process.env.AIRTABLE_BASE_ID?.trim();
 
 if (!API_TOKEN || !BASE_ID) {
   console.warn("[airtable] Missing AIRTABLE_API_TOKEN or AIRTABLE_BASE_ID env vars");
