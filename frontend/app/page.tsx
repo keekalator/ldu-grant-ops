@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import Header from "@/components/layout/Header";
+
+export const dynamic = "force-dynamic";
 import UrgentAlerts from "@/components/dashboard/UrgentAlerts";
 import PipelineSnapshot from "@/components/dashboard/PipelineSnapshot";
 import GrantCard from "@/components/shared/GrantCard";

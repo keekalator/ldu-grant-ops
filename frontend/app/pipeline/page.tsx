@@ -1,5 +1,7 @@
 import { Suspense } from "react";
 import Header from "@/components/layout/Header";
+
+export const dynamic = "force-dynamic";
 import KanbanBoard from "@/components/pipeline/KanbanBoard";
 import PixelIcon from "@/components/shared/PixelIcon";
 import { getOpportunities as fetchOpportunities } from "@/lib/airtable";

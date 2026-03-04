@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import Header from "@/components/layout/Header";
+
+export const dynamic = "force-dynamic";
 import GrantCard from "@/components/shared/GrantCard";
 import PixelIcon from "@/components/shared/PixelIcon";
 import { daysUntilDeadline } from "@/lib/utils";

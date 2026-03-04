@@ -1,5 +1,7 @@
 import { Suspense } from "react";
 import Header from "@/components/layout/Header";
+
+export const dynamic = "force-dynamic";
 import PixelIcon from "@/components/shared/PixelIcon";
 import { formatCurrency } from "@/lib/utils";
 import { getFunders as fetchFunders } from "@/lib/airtable";
