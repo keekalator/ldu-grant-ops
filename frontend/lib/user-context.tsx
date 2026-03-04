@@ -262,8 +262,14 @@ function OnboardingModal({ onSelect }: { onSelect: (m: TeamMember) => void }) {
         </div>
       </div>
 
+      {/* Scroll hint — 3 characters, scroll to see all */}
+      <p className="text-[9px] text-[#fffbf0] opacity-70 mb-3 text-center"
+        style={{ fontFamily: "Orbitron, sans-serif" }}>
+        ↓ SCROLL DOWN FOR ALL 3 CHARACTERS ↓
+      </p>
+
       {/* Character cards — full-width image cards */}
-      <div className="flex flex-col gap-4 w-full max-w-sm relative">
+      <div className="flex flex-col gap-4 w-full max-w-sm relative pb-4">
         {CHARACTERS.map(({ member, charId, accent, glow }) => {
           const isHovered = hovered === charId;
           return (
@@ -285,7 +291,7 @@ function OnboardingModal({ onSelect }: { onSelect: (m: TeamMember) => void }) {
               <img
                 src={`/characters/${charId}.png`}
                 alt={member.id}
-                className="w-full block"
+                className="w-full block max-h-[45vh] object-cover object-top"
                 style={{ imageRendering: "pixelated" }}
               />
 
