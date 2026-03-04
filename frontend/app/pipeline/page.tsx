@@ -1,3 +1,4 @@
+import { getBaseUrl } from "@/lib/base-url";
 import { Suspense } from "react";
 import Header from "@/components/layout/Header";
 import KanbanBoard from "@/components/pipeline/KanbanBoard";
@@ -6,7 +7,7 @@ import type { Opportunity } from "@/types";
 
 async function getOpportunities(): Promise<Opportunity[]> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+    const baseUrl = getBaseUrl();
     const res = await fetch(`${baseUrl}/api/opportunities`, { next: { revalidate: 60 } });
     if (!res.ok) return [];
     const data = await res.json();

@@ -1,3 +1,4 @@
+import { getBaseUrl } from "@/lib/base-url";
 import { Suspense } from "react";
 import Header from "@/components/layout/Header";
 import PixelIcon from "@/components/shared/PixelIcon";
@@ -6,7 +7,7 @@ import type { Funder } from "@/types";
 
 async function getFunders(): Promise<Funder[]> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+    const baseUrl = getBaseUrl();
     const res = await fetch(`${baseUrl}/api/funders`, { next: { revalidate: 120 } });
     if (!res.ok) return [];
     const data = await res.json();

@@ -1,3 +1,4 @@
+import { getBaseUrl } from "@/lib/base-url";
 import { Suspense } from "react";
 import Link from "next/link";
 import Header from "@/components/layout/Header";
@@ -7,7 +8,7 @@ import type { Opportunity } from "@/types";
 
 async function getAwardedGrants(): Promise<Opportunity[]> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+    const baseUrl = getBaseUrl();
     const res = await fetch(`${baseUrl}/api/opportunities?status=Awarded`, { next: { revalidate: 60 } });
     if (!res.ok) return [];
     const data = await res.json();
@@ -17,7 +18,7 @@ async function getAwardedGrants(): Promise<Opportunity[]> {
 
 async function getSubmittedGrants(): Promise<Opportunity[]> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+    const baseUrl = getBaseUrl();
     const res = await fetch(`${baseUrl}/api/opportunities?status=Submitted`, { next: { revalidate: 60 } });
     if (!res.ok) return [];
     const data = await res.json();

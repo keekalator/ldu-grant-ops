@@ -18,6 +18,12 @@ build/
 .mypy_cache/
 logs/*.log
 
+# Large files / PDFs (not needed in repo)
+*.pdf
+*.PDF
+Users/
+Users 2/
+
 # ── Node / Next.js ────────────────────────────────────────────────────────────
 frontend/node_modules/
 frontend/.next/

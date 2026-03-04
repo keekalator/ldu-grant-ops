@@ -219,7 +219,7 @@ function OnboardingModal({ onSelect }: { onSelect: (m: TeamMember) => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-[999] flex flex-col items-center justify-center px-4 py-6 overflow-y-auto"
+      className="fixed inset-0 z-[999] flex flex-col items-center px-4 py-6 overflow-y-auto justify-start pt-8"
       style={{
         background: "linear-gradient(160deg, #0d0030 0%, #1565e8 50%, #001a6e 100%)",
       }}

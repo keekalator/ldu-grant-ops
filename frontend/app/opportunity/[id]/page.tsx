@@ -1,3 +1,4 @@
+import { getBaseUrl } from "@/lib/base-url";
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -13,7 +14,7 @@ import type { Opportunity, Priority } from "@/types";
 
 async function getOpportunity(id: string): Promise<Opportunity | null> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+    const baseUrl = getBaseUrl();
     const res = await fetch(`${baseUrl}/api/opportunities/${id}`, { cache: "no-store" });
     if (!res.ok) return null;
     return res.json() as Promise<Opportunity>;

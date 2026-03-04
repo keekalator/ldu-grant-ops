@@ -1,3 +1,4 @@
+import { getBaseUrl } from "@/lib/base-url";
 import { Suspense } from "react";
 import Link from "next/link";
 import Header from "@/components/layout/Header";
@@ -8,7 +9,7 @@ import type { Opportunity } from "@/types";
 
 async function getWritingQueue(): Promise<Opportunity[]> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+    const baseUrl = getBaseUrl();
     const [r1, r2] = await Promise.all([
       fetch(`${baseUrl}/api/opportunities?status=Writing`,   { next: { revalidate: 60 } }),
       fetch(`${baseUrl}/api/opportunities?status=In Review`, { next: { revalidate: 60 } }),
