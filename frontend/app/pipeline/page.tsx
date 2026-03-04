@@ -3,6 +3,7 @@ import Header from "@/components/layout/Header";
 
 export const dynamic = "force-dynamic";
 import KanbanBoard from "@/components/pipeline/KanbanBoard";
+import AddGrantButton from "@/components/pipeline/AddGrantButton";
 import PixelIcon from "@/components/shared/PixelIcon";
 import { getOpportunities as fetchOpportunities } from "@/lib/airtable";
 import type { Opportunity } from "@/types";
@@ -19,20 +20,23 @@ async function PipelineContent({ initialStage, initialPillar }: { initialStage?:
 
   return (
     <div className="page-container space-y-4">
-      {/* Summary bar — bright theme */}
-      <div
-        className="rounded-xl border-[2.5px] border-[#0a0a1a] px-4 py-2.5 flex items-center gap-3"
-        style={{ background: "#e8d4ff", boxShadow: "3px 3px 0 #7c3aed" }}
-      >
-        <PixelIcon name="pipeline" size={16} color="#7c3aed" />
-        <p className="text-[10px] font-black text-[#0a0a1a] uppercase tracking-widest flex-1"
-          style={{ fontFamily: "Orbitron, sans-serif" }}>
-          TOTAL MISSIONS
-        </p>
-        <p className="text-xl font-black text-[#7c3aed]"
-          style={{ fontFamily: "Orbitron, sans-serif" }}>
-          {opportunities.length}
-        </p>
+      {/* Summary bar + Quick Add */}
+      <div className="flex items-center gap-2">
+        <div
+          className="flex-1 rounded-xl border-[2.5px] border-[#0a0a1a] px-4 py-2.5 flex items-center gap-3"
+          style={{ background: "#e8d4ff", boxShadow: "3px 3px 0 #7c3aed" }}
+        >
+          <PixelIcon name="pipeline" size={16} color="#7c3aed" />
+          <p className="text-[10px] font-black text-[#0a0a1a] uppercase tracking-widest flex-1"
+            style={{ fontFamily: "Orbitron, sans-serif" }}>
+            TOTAL MISSIONS
+          </p>
+          <p className="text-xl font-black text-[#7c3aed]"
+            style={{ fontFamily: "Orbitron, sans-serif" }}>
+            {opportunities.length}
+          </p>
+        </div>
+        <AddGrantButton />
       </div>
 
       <KanbanBoard
