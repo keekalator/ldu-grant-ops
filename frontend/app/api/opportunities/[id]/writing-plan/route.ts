@@ -52,7 +52,7 @@ function buildNextSteps(plan: Plan): string {
 
 async function saveplan(id: string, plan: Plan) {
   const nextSteps = buildNextSteps(plan);
-  await fetch(
+  const res = await fetch(
     `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_NAME}/${id}`,
     {
       method: "PATCH",
@@ -63,11 +63,15 @@ async function saveplan(id: string, plan: Plan) {
       body: JSON.stringify({
         fields: {
           "Writing Plan": JSON.stringify(plan),
-          "Next Steps": nextSteps,    // auto-populated from plan
+          "Next Steps": nextSteps,
         },
       }),
     }
   );
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Airtable PATCH ${res.status}: ${err}`);
+  }
 }
 
 // ─── Build the Claude prompt ──────────────────────────────────────────────────
@@ -148,7 +152,7 @@ export async function POST(
     },
     body: JSON.stringify({
       model: "claude-sonnet-4-6",
-      max_tokens: 1200,
+      max_tokens: 2048,
       messages: [{ role: "user", content: prompt }],
     }),
   });
@@ -164,25 +168,37 @@ export async function POST(
   // Strip accidental markdown fences
   raw = raw.trim();
   if (raw.startsWith("```")) {
-    raw = raw.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+    raw = raw.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "").trim();
+  }
+
+  // If truncated mid-JSON, attempt to close the object so parse can succeed
+  if (raw.startsWith("{") && !raw.endsWith("}")) {
+    raw = raw + '"}]}';  // best-effort close
   }
 
   let plan: Plan;
   try {
     plan = JSON.parse(raw) as Plan;
+    // Sanitize — ensure all array fields exist
+    plan.sections  = Array.isArray(plan.sections)  ? plan.sections  : [];
+    plan.themes    = Array.isArray(plan.themes)    ? plan.themes    : [];
+    plan.materials = Array.isArray(plan.materials) ? plan.materials : [];
+    plan.winTips   = Array.isArray(plan.winTips)   ? plan.winTips   : [];
+    plan.estimatedHours = Number(plan.estimatedHours) || 4;
+    plan.angle     = plan.angle ?? "";
   } catch {
-    plan = {
-      angle: raw.slice(0, 500),
-      sections: [],
-      themes: [],
-      materials: [],
-      estimatedHours: 0,
-      winTips: [],
-    };
+    return NextResponse.json(
+      { error: `Claude returned unparseable JSON. Try regenerating. Raw: ${raw.slice(0, 200)}` },
+      { status: 500 }
+    );
   }
 
-  // 3. Save back to Airtable
-  await saveplan(id, plan);
+  // 3. Save back to Airtable — log errors but don't fail the request
+  try {
+    await saveplan(id, plan);
+  } catch (saveErr) {
+    console.error("[writing-plan] Airtable save failed:", saveErr);
+  }
 
   return NextResponse.json({ plan });
 }
