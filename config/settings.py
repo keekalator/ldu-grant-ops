@@ -13,7 +13,7 @@ class Settings(BaseSettings):
 
     # --- Anthropic (Claude AI) ---
     anthropic_api_key: str = Field(..., description="Claude API key")
-    claude_model: str = Field(default="claude-sonnet-4-5-20250929", description="Claude model to use")
+    claude_model: str = Field(default="claude-sonnet-4-6", description="Claude model to use")
 
     # --- Airtable ---
     airtable_api_token: str = Field(..., description="Airtable personal access token")
