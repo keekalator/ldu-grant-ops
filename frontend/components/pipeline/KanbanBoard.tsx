@@ -3,12 +3,12 @@
 import { useState, useMemo } from "react";
 import GrantCard from "@/components/shared/GrantCard";
 import PixelIcon from "@/components/shared/PixelIcon";
-// Stage → Airtable status mapping (replaces old KANBAN_COLUMNS)
+// Stage → Airtable status mapping (matches real Airtable field values)
 const STAGE_STATUSES: Record<string, string[]> = {
-  research:  ["Prospect", "Qualifying"],
-  writing:   ["Writing", "In Review"],
-  submitted: ["Submitted", "Active"],
-  closed:    ["Awarded", "Declined", "Rejected"],
+  research:  ["Prospect", "Scoring"],
+  writing:   ["Writing Queue"],
+  submitted: ["Active", "Submitted"],
+  closed:    ["Awarded", "Declined", "Rejected", "Disqualified"],
 };
 import { ALL_ENTITIES } from "@/lib/entities";
 import type { Opportunity } from "@/types";
@@ -48,15 +48,26 @@ const STAGES: {
 
 // ─── Pillar filters — short labels so they never truncate ─────────────────────
 
+// id = Airtable pillar code so filter comparison works directly
 const PILLAR_FILTERS: { id: string; label: string; color: string; bg: string }[] = [
-  { id: "all",                        label: "All Areas",  color: "#0a0a1a", bg: "#ffe100" },
-  { id: "Capital Campaign",           label: "🏛 Campus",  color: "#7c3aed", bg: "#e8d4ff" },
-  { id: "Programming & Operations",   label: "💻 Programs", color: "#0066cc", bg: "#b8e0ff" },
-  { id: "Studio WELEH",               label: "🎨 WELEH",   color: "#ff1e78", bg: "#ffe0f0" },
-  { id: "Agricultural Extension",     label: "🌱 The Farm", color: "#00a83a", bg: "#b8ffda" },
-  { id: "Founder & Enterprise",       label: "⭐ Founders", color: "#ff6b00", bg: "#ffd0a0" },
-  { id: "Textile Sustainability",     label: "♻️ Textile",  color: "#0099aa", bg: "#b8f0ff" },
+  { id: "all",          label: "All Areas",  color: "#0a0a1a", bg: "#ffe100" },
+  { id: "P1",           label: "Campus",     color: "#7c3aed", bg: "#e8d4ff" },
+  { id: "P2",           label: "Programs",   color: "#0066cc", bg: "#b8e0ff" },
+  { id: "P3",           label: "WELEH",      color: "#ff1e78", bg: "#ffe0f0" },
+  { id: "P4",           label: "The Farm",   color: "#00a83a", bg: "#b8ffda" },
+  { id: "P5",           label: "Founders",   color: "#ff6b00", bg: "#ffd0a0" },
+  { id: "CROSS_TEXTILE",label: "Textile",    color: "#0099aa", bg: "#b8f0ff" },
 ];
+
+// Maps URL-param full pillar names → Airtable pillar codes
+const PILLAR_NAME_TO_CODE: Record<string, string> = {
+  "Capital Campaign":           "P1",
+  "Programming & Operations":   "P2",
+  "Studio WELEH":               "P3",
+  "Agricultural Extension":     "P4",
+  "Founder & Enterprise":       "P5",
+  "Textile Sustainability":      "CROSS_TEXTILE",
+};
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -67,8 +78,13 @@ interface Props {
 }
 
 export default function KanbanBoard({ opportunities, initialStage, initialPillar }: Props) {
+  // Normalize initialPillar: accept both full names (from URL) and codes (from direct use)
+  const normalizedInitialPillar = initialPillar
+    ? (PILLAR_NAME_TO_CODE[initialPillar] ?? initialPillar)
+    : "all";
+
   const [activeCol, setActiveCol] = useState(initialStage ?? "research");
-  const [pillar,    setPillar]    = useState(initialPillar ?? "all");
+  const [pillar,    setPillar]    = useState(normalizedInitialPillar);
   const [entity,    setEntity]    = useState("all");
   const [search,    setSearch]    = useState("");
 
@@ -77,9 +93,7 @@ export default function KanbanBoard({ opportunities, initialStage, initialPillar
 
   const filtered = useMemo(() => {
     let list = opportunities;
-    if (pillar !== "all") list = list.filter((o) => o.fields.Pillar?.some(
-      p => p === pillar || p.toLowerCase().includes(pillar.toLowerCase().split(" ")[0].toLowerCase())
-    ));
+    if (pillar !== "all") list = list.filter((o) => o.fields.Pillar?.includes(pillar as never));
     if (entity !== "all") list = list.filter((o) => {
       const e = o.fields["Submitting Entity"] ?? "";
       return e === entity || e.toLowerCase().includes(entity.toLowerCase().split(" ")[0].toLowerCase());
@@ -98,9 +112,7 @@ export default function KanbanBoard({ opportunities, initialStage, initialPillar
   function colCount(id: string) {
     const statuses = STAGE_STATUSES[id] ?? [];
     let list = opportunities;
-    if (pillar !== "all") list = list.filter((o) => o.fields.Pillar?.some(
-      p => p === pillar || p.toLowerCase().includes(pillar.toLowerCase().split(" ")[0].toLowerCase())
-    ));
+    if (pillar !== "all") list = list.filter((o) => o.fields.Pillar?.includes(pillar as never));
     if (entity !== "all") list = list.filter((o) => {
       const e = o.fields["Submitting Entity"] ?? "";
       return e === entity || e.toLowerCase().includes(entity.toLowerCase().split(" ")[0].toLowerCase());

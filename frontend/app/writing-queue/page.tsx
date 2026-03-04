@@ -20,8 +20,8 @@ async function getWritingQueue(): Promise<Opportunity[]> {
 
 async function WritingQueueContent() {
   const opps = await getWritingQueue();
-  const writing = opps.filter((o) => o.fields.Status === "Writing");
-  const review  = opps.filter((o) => o.fields.Status === "In Review");
+  const writing = opps.filter((o) => o.fields.Status === "Writing Queue");
+  const review  = opps.filter((o) => o.fields.Status === "In Review"); // kept for legacy data
   const urgent  = opps.filter((o) => daysUntilDeadline(o.fields.Deadline) <= 7);
 
   if (opps.length === 0) {

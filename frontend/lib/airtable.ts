@@ -122,7 +122,7 @@ export async function getOpportunitiesByStatus(status: string) {
 
 export async function getWritingQueue() {
   return listRecords("Opportunities", {
-    filterByFormula: `OR({Status} = "Writing", {Status} = "In Review")`,
+    filterByFormula: `{Status} = "Writing Queue"`,
     sort: [{ field: "Deadline", direction: "asc" }],
   });
 }

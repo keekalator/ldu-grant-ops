@@ -1,15 +1,20 @@
 // ─── Grant Opportunity ───────────────────────────────────────────────────────
 
 export type GrantStatus =
+  // Live Airtable values
   | "Prospect"
-  | "Qualifying"
-  | "Writing"
-  | "In Review"
+  | "Scoring"
+  | "Writing Queue"
+  | "Active"
   | "Submitted"
   | "Awarded"
+  | "Disqualified"
   | "Declined"
   | "Rejected"
-  | "Active";
+  // Legacy / future values kept for safety
+  | "Qualifying"
+  | "Writing"
+  | "In Review";
 
 export type Pillar =
   | "Capital Campaign"
@@ -115,10 +120,10 @@ export interface UrgentAlert {
 export type KanbanStage = "scout" | "draft" | "sent" | "done";
 
 export const KANBAN_STAGE_STATUSES: Record<KanbanStage, GrantStatus[]> = {
-  scout: ["Prospect", "Qualifying"],
-  draft: ["Writing", "In Review"],
-  sent:  ["Submitted", "Active"],
-  done:  ["Awarded", "Declined", "Rejected"],
+  scout: ["Prospect", "Scoring"],
+  draft: ["Writing Queue"],
+  sent:  ["Active", "Submitted"],
+  done:  ["Awarded", "Declined", "Rejected", "Disqualified"],
 };
 
 // ─── API Response ─────────────────────────────────────────────────────────────

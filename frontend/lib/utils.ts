@@ -52,15 +52,19 @@ export function timeAgo(dateStr: string | undefined): string {
 // ─── Status Colors ────────────────────────────────────────────────────────────
 
 export const STATUS_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
-  Prospect: { bg: "bg-violet-900/30", text: "text-violet-300", dot: "bg-violet-400" },
-  Qualifying: { bg: "bg-purple-900/30", text: "text-purple-300", dot: "bg-purple-400" },
-  Writing: { bg: "bg-amber-900/30", text: "text-amber-300", dot: "bg-amber-400" },
-  "In Review": { bg: "bg-sky-900/30", text: "text-sky-300", dot: "bg-sky-400" },
-  Submitted: { bg: "bg-teal-900/30", text: "text-teal-300", dot: "bg-teal-400" },
-  Active: { bg: "bg-teal-900/30", text: "text-teal-300", dot: "bg-teal-400" },
-  Awarded: { bg: "bg-emerald-900/30", text: "text-emerald-300", dot: "bg-emerald-400" },
-  Declined: { bg: "bg-neutral-800/50", text: "text-neutral-400", dot: "bg-neutral-500" },
-  Rejected: { bg: "bg-neutral-800/50", text: "text-neutral-400", dot: "bg-neutral-500" },
+  Prospect:       { bg: "bg-violet-900/30", text: "text-violet-300",  dot: "bg-violet-400" },
+  Scoring:        { bg: "bg-purple-900/30", text: "text-purple-300",  dot: "bg-purple-400" },
+  "Writing Queue":{ bg: "bg-amber-900/30",  text: "text-amber-300",   dot: "bg-amber-400" },
+  Active:         { bg: "bg-teal-900/30",   text: "text-teal-300",    dot: "bg-teal-400" },
+  Submitted:      { bg: "bg-teal-900/30",   text: "text-teal-300",    dot: "bg-teal-400" },
+  Awarded:        { bg: "bg-emerald-900/30",text: "text-emerald-300", dot: "bg-emerald-400" },
+  Disqualified:   { bg: "bg-neutral-800/50",text: "text-neutral-400", dot: "bg-neutral-500" },
+  Declined:       { bg: "bg-neutral-800/50",text: "text-neutral-400", dot: "bg-neutral-500" },
+  Rejected:       { bg: "bg-neutral-800/50",text: "text-neutral-400", dot: "bg-neutral-500" },
+  // Legacy values kept for safety
+  Qualifying:     { bg: "bg-purple-900/30", text: "text-purple-300",  dot: "bg-purple-400" },
+  Writing:        { bg: "bg-amber-900/30",  text: "text-amber-300",   dot: "bg-amber-400" },
+  "In Review":    { bg: "bg-sky-900/30",    text: "text-sky-300",     dot: "bg-sky-400" },
 };
 
 export function getStatusStyle(status: string | undefined) {
@@ -105,11 +109,12 @@ export function buildUrgentAlerts(opportunities: Opportunity[]): UrgentAlert[] {
 
     const days = differenceInDays(parseISO(deadline), now);
 
-    if (days < 0 && !["Awarded", "Declined", "Rejected", "Submitted"].includes(status)) {
+    const CLOSED = ["Awarded", "Declined", "Rejected", "Disqualified", "Submitted"];
+    if (days < 0 && !CLOSED.includes(status)) {
       alerts.push({ type: "overdue", grantName: name, opportunityId: opp.id, daysUntil: days, status });
-    } else if (days >= 0 && days <= 7 && !["Awarded", "Declined", "Rejected"].includes(status)) {
+    } else if (days >= 0 && days <= 7 && !["Awarded", "Declined", "Rejected", "Disqualified"].includes(status)) {
       alerts.push({ type: "deadline", grantName: name, opportunityId: opp.id, daysUntil: days, status });
-    } else if (status === "In Review" && days <= 14) {
+    } else if (status === "Writing Queue" && days <= 14) {
       alerts.push({ type: "review", grantName: name, opportunityId: opp.id, daysUntil: days, status });
     }
   }
@@ -142,12 +147,12 @@ export function computePipelineStats(opportunities: Opportunity[]): PipelineStat
       const days = Math.floor(
         (new Date(opp.fields.Deadline).getTime() - Date.now()) / 86400000
       );
-      if (days >= 0 && days <= 30 && !["Awarded", "Declined", "Rejected"].includes(status)) {
+      if (days >= 0 && days <= 30 && !["Awarded", "Declined", "Rejected", "Disqualified"].includes(status)) {
         upcomingDeadlines.push(opp);
       }
     }
 
-    if (["Writing", "In Review"].includes(status)) writingQueue.push(opp);
+    if (status === "Writing Queue") writingQueue.push(opp);
   }
 
   return {

@@ -163,8 +163,8 @@ async function DashboardContent() {
     );
   }
 
-  const writingCount = (stats.byStatus["Writing"] ?? 0) + (stats.byStatus["In Review"] ?? 0);
-  const submittedCount = stats.byStatus["Submitted"] ?? 0;
+  const writingCount = stats.byStatus["Writing Queue"] ?? 0;
+  const submittedCount = (stats.byStatus["Active"] ?? 0) + (stats.byStatus["Submitted"] ?? 0);
   const awardedCount = stats.byStatus["Awarded"] ?? 0;
 
   return (
