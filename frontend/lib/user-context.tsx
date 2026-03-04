@@ -216,10 +216,11 @@ const CHARACTERS = [
 
 function OnboardingModal({ onSelect }: { onSelect: (m: TeamMember) => void }) {
   const [hovered, setHovered] = useState<string | null>(null);
+  const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
 
   return (
     <div
-      className="fixed inset-0 z-[999] flex flex-col items-center px-4 overflow-y-auto justify-start pt-8 pb-10"
+      className="fixed inset-0 z-[999] flex flex-col"
       style={{
         background: "linear-gradient(160deg, #0d0030 0%, #1565e8 50%, #001a6e 100%)",
       }}
@@ -231,91 +232,86 @@ function OnboardingModal({ onSelect }: { onSelect: (m: TeamMember) => void }) {
           backgroundSize: "24px 24px",
         }} />
 
-      {/* Header */}
-      <div className="relative text-center mb-6 max-w-sm w-full">
-        {/* LDU pixel shield icon */}
+      {/* Header — fixed at top */}
+      <div className="relative text-center pt-6 pb-3 px-4 shrink-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/icons/icon-192.png"
           alt="LDU"
-          className="w-16 h-16 mx-auto mb-3 rounded-xl border-[3px] border-[#fffbf0]"
+          className="w-14 h-14 mx-auto mb-2 rounded-xl border-[3px] border-[#fffbf0]"
           style={{ boxShadow: "4px 4px 0 #0a0a1a" }}
         />
-
-        <h1 className="text-2xl font-black text-[#fffbf0] leading-tight mb-2"
+        <h1 className="text-xl font-black text-[#fffbf0] leading-tight"
           style={{ fontFamily: "Orbitron, sans-serif",
-            textShadow: "3px 3px 0 #0a0a1a, 0 0 30px rgba(124,58,237,0.8)" }}>
-          SELECT YOUR<br />CHARACTER
+            textShadow: "3px 3px 0 #0a0a1a" }}>
+          SELECT YOUR CHARACTER
         </h1>
-        <p className="text-[10px] text-[#fffbf0] opacity-60 tracking-widest"
-          style={{ fontFamily: "Orbitron, sans-serif" }}>
-          YOUR ACTIONS WILL BE LOGGED UNDER YOUR NAME
-        </p>
-
-        {/* Blinking dots */}
-        <div className="flex justify-center gap-1 mt-3">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="w-2 h-2 rounded-sm border border-[#fffbf0] animate-pulse"
-              style={{ background: ["#ff1e78","#7c3aed","#ffb800"][i],
-                animationDelay: `${i * 0.2}s` }} />
-          ))}
-        </div>
       </div>
 
-      {/* Scroll hint — 3 characters, scroll to see all */}
-      <p className="text-[9px] text-[#fffbf0] opacity-70 mb-3 text-center"
-        style={{ fontFamily: "Orbitron, sans-serif" }}>
-        ↓ SCROLL DOWN FOR ALL 3 CHARACTERS ↓
-      </p>
-
-      {/* Character cards — full-width image cards */}
-      <div className="flex flex-col gap-4 w-full max-w-sm relative pb-4">
-        {CHARACTERS.map(({ member, charId, accent, glow }) => {
-          const isHovered = hovered === charId;
-          return (
-            <button
-              key={member.id}
-              onClick={() => onSelect(member as TeamMember)}
-              onMouseEnter={() => setHovered(charId)}
-              onMouseLeave={() => setHovered(null)}
-              className="w-full rounded-2xl border-[3px] border-[#0a0a1a] overflow-hidden transition-all duration-100 active:translate-y-[3px] active:shadow-none focus:outline-none"
-              style={{
-                boxShadow: isHovered
-                  ? `6px 6px 0 ${accent}, 0 0 30px ${glow}`
-                  : `4px 4px 0 ${accent}`,
-                transform: isHovered ? "translateY(-2px)" : "none",
-              }}
-            >
-              {/* Full character card image */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`/characters/${charId}.png`}
-                alt={member.id}
-                className="w-full block max-h-[45vh] object-cover object-top"
-                style={{ imageRendering: "pixelated" }}
-              />
-
-              {/* Tap-to-select footer */}
-              <div
-                className="w-full py-2 px-4 flex items-center justify-between border-t-[2px] border-[#0a0a1a]"
-                style={{ background: accent }}
+      {/* Scrollable area — min-h-0 is critical for iOS scroll */}
+      <div
+        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 pb-8"
+        style={{ WebkitOverflowScrolling: "touch" }}
+      >
+        <div className="flex flex-col gap-3 max-w-sm mx-auto">
+          {CHARACTERS.map(({ member, charId, accent, glow }) => {
+            const isHovered = hovered === charId;
+            const imgFailed = imgErrors[charId];
+            return (
+              <button
+                key={member.id}
+                onClick={() => onSelect(member as TeamMember)}
+                onMouseEnter={() => setHovered(charId)}
+                onMouseLeave={() => setHovered(null)}
+                className="w-full rounded-2xl border-[3px] border-[#0a0a1a] overflow-hidden transition-all duration-100 active:translate-y-[2px] active:shadow-none focus:outline-none shrink-0"
+                style={{
+                  boxShadow: isHovered
+                    ? `6px 6px 0 ${accent}, 0 0 30px ${glow}`
+                    : `4px 4px 0 ${accent}`,
+                  transform: isHovered ? "translateY(-2px)" : "none",
+                }}
               >
-                <span className="text-[10px] font-black text-white tracking-widest"
-                  style={{ fontFamily: "Orbitron, sans-serif" }}>
-                  TAP TO SELECT
-                </span>
-                <PixelIcon name="play" size={14} color="#ffffff" />
-              </div>
-            </button>
-          );
-        })}
-      </div>
+                {/* Card content — image or fallback */}
+                <div className="min-h-[120px] flex items-center justify-center relative bg-[#fffbf0]/10">
+                  {imgFailed ? (
+                    <div className="flex flex-col items-center gap-2 py-4">
+                      <CharacterSprite charId={charId} color={accent} size={56} />
+                      <span className="text-sm font-black text-[#fffbf0]"
+                        style={{ fontFamily: "Orbitron, sans-serif" }}>
+                        {member.id.split(" (")[0].toUpperCase()}
+                      </span>
+                    </div>
+                  ) : (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={`/characters/${charId}.png`}
+                      alt={member.id}
+                      className="w-full block h-[180px] object-cover object-top"
+                      style={{ imageRendering: "pixelated" }}
+                      onError={() => setImgErrors((e) => ({ ...e, [charId]: true }))}
+                    />
+                  )}
+                </div>
 
-      {/* Footer */}
-      <p className="text-[8px] text-[#fffbf0] opacity-40 mt-6 text-center tracking-widest"
-        style={{ fontFamily: "Orbitron, sans-serif" }}>
-        PRESS START · SWITCH ANYTIME VIA THE ? BUTTON
-      </p>
+                <div
+                  className="w-full py-2 px-4 flex items-center justify-between border-t-[2px] border-[#0a0a1a]"
+                  style={{ background: accent }}
+                >
+                  <span className="text-[10px] font-black text-white tracking-widest"
+                    style={{ fontFamily: "Orbitron, sans-serif" }}>
+                    TAP TO SELECT
+                  </span>
+                  <PixelIcon name="play" size={14} color="#ffffff" />
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-[8px] text-[#fffbf0] opacity-40 mt-4 text-center tracking-widest"
+          style={{ fontFamily: "Orbitron, sans-serif" }}>
+          SWITCH ANYTIME VIA THE ? BUTTON
+        </p>
+      </div>
     </div>
   );
 }
