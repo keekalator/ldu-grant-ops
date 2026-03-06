@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse }  from "next/server";
 import { fetchBestGrantPage }         from "@/lib/fetchGrantPage";
+import { buildEntityContext }         from "@/lib/entityProfiles";
 
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID!;
 const AIRTABLE_TOKEN   = process.env.AIRTABLE_API_TOKEN!;
@@ -106,13 +107,16 @@ function buildPrompt(fields: Record<string, unknown>, pageText?: string | null, 
   if (fields["Pillar"])              lines.push(`LDU Pillars: ${(fields["Pillar"] as string[]).join(", ")}`);
   if (fields["Award Amount Range"])  lines.push(`Award Amount: $${Number(fields["Award Amount Range"]).toLocaleString()}`);
   if (fields["Deadline"])            lines.push(`Deadline: ${fields["Deadline"]}`);
-  if (fields["Submitting Entity"])   lines.push(`Submitting Entity: ${fields["Submitting Entity"]}`);
   if (fields["Eligibility Notes"])   lines.push(`Eligibility (previously extracted): ${fields["Eligibility Notes"]}`);
-  if (fields["Why We Qualify"])      lines.push(`Why LDU Qualifies (previously extracted): ${fields["Why We Qualify"]}`);
+  if (fields["Why We Qualify"])      lines.push(`Why the submitting entity qualifies: ${fields["Why We Qualify"]}`);
   if (fields["Source"])              lines.push(`Source: ${fields["Source"]}`);
   if (fields["Notes"])               lines.push(`Context: ${String(fields["Notes"]).slice(0, 400)}`);
 
   const grantDetails = lines.join("\n") || "No details available.";
+
+  // Entity-specific context — use whoever is set as Submitting Entity
+  const entityValue = (fields["Submitting Entity"] as string | undefined) ?? "LDU (501c3)";
+  const entityContext = buildEntityContext(entityValue);
 
   // Cap page content at 6 000 chars to leave plenty of output budget for the JSON
   const cappedPageText = pageText ? pageText.slice(0, 6_000) : null;
@@ -120,10 +124,13 @@ function buildPrompt(fields: Record<string, unknown>, pageText?: string | null, 
     ? `\nLIVE GRANT GUIDELINES (fetched from ${pageUrl ?? "funder website"}):\n─────────────────────────────────────────\n${cappedPageText}\n─────────────────────────────────────────\nUse the live content above as your PRIMARY source for required sections, page limits, and submission requirements.\n`
     : "";
 
-  return `You are a senior grant writer for Life Development University (LDU), a 501(c)(3) nonprofit creative campus on Crenshaw Boulevard in Los Angeles.
+  return `You are a senior grant writer working on behalf of the following entity:
 
-Given the grant details and LIVE GUIDELINES below, generate a focused WRITING PLAN and SUBMISSION REQUIREMENTS checklist.
+${entityContext}
+
+Given the grant details and LIVE GUIDELINES below, generate a focused WRITING PLAN and SUBMISSION REQUIREMENTS checklist written entirely from the perspective of ${entityValue}.
 The live guidelines are the authoritative source — use them to extract real section names, page limits, and required documents.
+Write all narrative angles, sections, and themes through the lens of ${entityValue} — not generic LDU boilerplate.
 
 GRANT DETAILS:
 ${grantDetails}

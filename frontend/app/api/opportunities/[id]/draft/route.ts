@@ -12,6 +12,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath }            from "next/cache";
 import { fetchBestGrantPage }        from "@/lib/fetchGrantPage";
+import { buildEntityContext }        from "@/lib/entityProfiles";
 
 const ANTHROPIC_KEY  = process.env.ANTHROPIC_API_KEY?.trim();
 const AIRTABLE_TOKEN = process.env.AIRTABLE_API_TOKEN?.trim();
@@ -32,23 +33,6 @@ async function airtableFetch(path: string, opts?: RequestInit) {
   return res.json();
 }
 
-// ─── LDU org context injected into every draft prompt ────────────────────────
-
-const LDU_CONTEXT = `
-ABOUT LIFE DEVELOPMENT UNIVERSITY (LDU):
-- 501(c)(3) nonprofit creative campus, 4241 Crenshaw Blvd, South Los Angeles
-- Co-founded by Kika Keith (CEO/Founder) and Kika Howze (Implementation Lead)
-- Black women-owned and led; serves South LA / Crenshaw corridor
-- Core programs: AI & tech training, camera operating, music production, vocational trades, youth development, re-entry workforce readiness, entrepreneurship
-- Studio WELEH: arts incubator, sustainable fashion, upcycling, content creation, youth art workshops
-- Agricultural Extension / Cultivation Campus: Yolo County, NorCal — seasonal exchange, farming, clothing factory (The Factory), trade training, wellness programming
-- Gorilla Rx Wellness Co.: cannabis dispensary, social equity licensee
-- Philosophy: "Culture as Cultivation" — growing food, people, and community as one act
-- Geographic reach: South LA, LA County, statewide California, Yolo County / Northern CA
-- Revenue: early-stage nonprofit scaling toward $10M+ grant pipeline
-- Key strengths: intersectional impact, BIPOC-led, intergenerational programs, farm-to-community supply chain
-`.trim();
-
 // ─── Draft prompt ─────────────────────────────────────────────────────────────
 
 function buildDraftPrompt(
@@ -65,8 +49,11 @@ function buildDraftPrompt(
   const pillars     = (fields["Pillar"] as string[] | undefined)?.join(", ") ?? "";
   const amount      = fields["Award Amount Range"]   ?? "";
   const deadline    = fields["Deadline"]             ?? "";
-  const entity      = fields["Submitting Entity"]    ?? "LDU (501c3)";
+  const entity      = (fields["Submitting Entity"] as string | undefined) ?? "LDU (501c3)";
   const notes       = String(fields["Notes"] ?? "").slice(0, 500);
+
+  // Use the actual submitting entity's context, not a generic LDU description
+  const entityContext = buildEntityContext(entity);
 
   const angle    = plan.angle    ?? "";
   const sections = (plan.sections as string[] | undefined) ?? [];
@@ -74,9 +61,9 @@ function buildDraftPrompt(
   const winTips  = (plan.winTips as string[] | undefined)  ?? [];
 
   return `
-You are a senior grant writer for Life Development University (LDU). Write the complete grant application narrative for the grant below.
+You are a senior grant writer working on behalf of ${entity}. Write the complete grant application narrative for the grant below.
 
-${LDU_CONTEXT}
+${entityContext}
 
 GRANT DETAILS:
 - Grant Name: ${name}
@@ -113,9 +100,10 @@ Write the complete grant narrative following the approved plan exactly. For each
 - Follow the narrative angle throughout — every section should reinforce it
 - Weave in the key themes naturally
 - Be specific to THIS funder's priorities, not generic
+- Write entirely from the perspective of ${entity} — use "we" / "our organization" / the entity's name
 - Write in a confident, professional grant writing voice
-- Ground claims in LDU's real programs, demographics, and geography
-- Do NOT invent statistics — use phrases like "youth served" or "participants" without fabricating numbers
+- Ground claims in the entity's real programs, demographics, and geography
+- Do NOT invent statistics — use phrases like "participants served" or "community members" without fabricating numbers
 - End with a strong closing paragraph
 
 Write the full draft now. Do not add preamble, explanations, or instructions — output only the grant narrative text.

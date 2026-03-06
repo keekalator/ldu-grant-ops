@@ -324,6 +324,7 @@ async function OpportunityDetail({ id }: { id: string }) {
           initialEligibility={fields["Eligibility Notes"] as string | undefined}
           initialWhyQualify={fields["Why We Qualify"] as string | undefined}
           initialFunder={(fields["Funder Name"] ?? fields["Funder"]) as string | undefined}
+          initialEntity={fields["Submitting Entity"] as string | undefined}
         />
 
         {/* ── Funder intel ─────────────────────────────────── */}
