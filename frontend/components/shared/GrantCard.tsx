@@ -173,7 +173,7 @@ export default function GrantCard({ opportunity, compact = false, onClick }: Gra
     return (
       <button
         onClick={onClick}
-        className="w-full text-left rounded-2xl border-[2.5px] border-[#0a0a1a] overflow-hidden transition-all duration-100 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+        className="w-full text-left rounded-2xl border-[2.5px] border-[#0a0a1a] overflow-hidden grant-card"
         style={{ background: cardBg, boxShadow: `4px 4px 0 ${cardShadow}` }}
       >
         {inner}
@@ -185,7 +185,7 @@ export default function GrantCard({ opportunity, compact = false, onClick }: Gra
   return (
     <Link
       href={`/opportunity/${opportunity.id}`}
-      className="block rounded-2xl border-[2.5px] border-[#0a0a1a] overflow-hidden transition-all duration-100 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+      className="block rounded-2xl border-[2.5px] border-[#0a0a1a] overflow-hidden grant-card"
       style={{ background: cardBg, boxShadow: `4px 4px 0 ${cardShadow}` }}
     >
       {inner}

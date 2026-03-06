@@ -3,6 +3,7 @@ import "./globals.css";
 import BottomNav from "@/components/layout/BottomNav";
 import HelpButton from "@/components/shared/HelpButton";
 import AIChatButton from "@/components/shared/AIChatButton";
+import CursorGlow from "@/components/shared/CursorGlow";
 import { UserProvider } from "@/lib/user-context";
 
 export const metadata: Metadata = {
@@ -50,6 +51,7 @@ export default function RootLayout({
       </head>
       <body className="bg-[#1565e8] text-[#0a0a1a] antialiased">
         <UserProvider>
+          <CursorGlow />
           <main className="relative">
             {children}
           </main>

@@ -62,6 +62,13 @@ module.exports = {
         "bounce-in":  "bounceIn 0.3s cubic-bezier(0.175,0.885,0.32,1.275)",
         "shimmer":    "shimmer 1.5s linear infinite",
         "float":      "float 3s ease-in-out infinite",
+        "glitch":     "glitch 5s ease-in-out infinite",
+        "reveal-up":  "revealUp 0.45s cubic-bezier(0.4,0,0.2,1) both",
+        "float-px":   "floatPixel 3s ease-in-out infinite",
+        "stat-pop":   "statPop 0.4s cubic-bezier(0.175,0.885,0.32,1.275) both",
+        "nav-pop":    "navIconPop 0.35s cubic-bezier(0.175,0.885,0.32,1.275) both",
+        "nav-active": "navActivate 0.35s cubic-bezier(0.175,0.885,0.32,1.275) forwards",
+        "scan":       "scanMove 3.5s linear infinite",
       },
       keyframes: {
         blink: { "0%,100%": { opacity: "1" }, "50%": { opacity: "0" } },
@@ -80,6 +87,44 @@ module.exports = {
         float: {
           "0%,100%": { transform: "translateY(0)" },
           "50%":     { transform: "translateY(-4px)" },
+        },
+        glitch: {
+          "0%,87%,100%": { transform: "translate(0)" },
+          "88%": { transform: "translate(-2px, 0)" },
+          "89%": { transform: "translate(2px, 0)" },
+          "90%": { transform: "translate(-1px, 1px)" },
+          "91%": { transform: "translate(1px, -1px)" },
+          "92%": { transform: "translate(0)" },
+        },
+        revealUp: {
+          "0%":   { opacity: "0", transform: "translateY(16px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        floatPixel: {
+          "0%,100%": { transform: "translateY(0px) rotate(0deg)" },
+          "33%":      { transform: "translateY(-5px) rotate(2deg)" },
+          "66%":      { transform: "translateY(-2px) rotate(-1deg)" },
+        },
+        statPop: {
+          "0%":   { transform: "scale(0.9)", opacity: "0" },
+          "60%":  { transform: "scale(1.04)" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
+        navIconPop: {
+          "0%":   { transform: "scale(0.65) rotate(-8deg)", opacity: "0.4" },
+          "55%":  { transform: "scale(1.22) rotate(4deg)" },
+          "80%":  { transform: "scale(0.96)" },
+          "100%": { transform: "scale(1) rotate(0deg)", opacity: "1" },
+        },
+        navActivate: {
+          "0%":   { transform: "translateY(0px)" },
+          "40%":  { transform: "translateY(-9px)" },
+          "65%":  { transform: "translateY(-2px)" },
+          "100%": { transform: "translateY(-4px)" },
+        },
+        scanMove: {
+          "0%":   { transform: "translateY(-100%)", opacity: "0.6" },
+          "100%": { transform: "translateY(200%)", opacity: "0" },
         },
       },
     },

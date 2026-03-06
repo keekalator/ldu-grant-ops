@@ -5,9 +5,9 @@ import PixelIcon from "@/components/shared/PixelIcon";
 import type { UrgentAlert } from "@/types";
 
 const ALERT_CONFIG = {
-  overdue:  { bg: "#ff1e78", cardBg: "#ffe0e8", shadow: "#0a0a1a", label: "OVERDUE",  icon: "alert"  as const, textColor: "white" },
-  deadline: { bg: "#ffe100", cardBg: "#fff8d0", shadow: "#0a0a1a", label: "DUE SOON", icon: "clock"  as const, textColor: "#0a0a1a" },
-  review:   { bg: "#00d4ff", cardBg: "#d0f4ff", shadow: "#0a0a1a", label: "REVIEW",   icon: "search" as const, textColor: "#0a0a1a" },
+  overdue:  { bg: "#ff1e78", cardBg: "#ffe0e8", shadow: "#0a0a1a", label: "OVERDUE",  icon: "alert"  as const, textColor: "white",   neonClass: "neon-pink"   },
+  deadline: { bg: "#ffe100", cardBg: "#fff8d0", shadow: "#0a0a1a", label: "DUE SOON", icon: "clock"  as const, textColor: "#0a0a1a", neonClass: "neon-yellow" },
+  review:   { bg: "#00d4ff", cardBg: "#d0f4ff", shadow: "#0a0a1a", label: "REVIEW",   icon: "search" as const, textColor: "#0a0a1a", neonClass: "neon-cyan"   },
 };
 
 function alertDesc(alert: UrgentAlert): string {
@@ -47,7 +47,7 @@ export default function UrgentAlerts({ alerts }: { alerts: UrgentAlert[] }) {
               className="w-10 h-10 rounded-xl border-[2px] border-[#0a0a1a] flex items-center justify-center shrink-0 relative"
               style={{ background: cfg.bg, boxShadow: "2px 2px 0 #0a0a1a" }}
             >
-              <PixelIcon name={cfg.icon} size={18} color={cfg.textColor} />
+              <PixelIcon name={cfg.icon} size={18} color={cfg.textColor} glow />
               {(alert.type === "overdue" || alert.daysUntil <= 2) && (
                 <span className="absolute -top-1.5 -right-1.5 flex h-3 w-3">
                   <span className="animate-ping absolute h-full w-full rounded-full bg-[#ff1e78] opacity-75" />
@@ -67,7 +67,7 @@ export default function UrgentAlerts({ alerts }: { alerts: UrgentAlert[] }) {
             {/* Label pill + arrow */}
             <div className="flex items-center gap-1.5 shrink-0">
               <span
-                className="text-[9px] font-black px-2.5 py-1 rounded-lg border-[2px] border-[#0a0a1a] uppercase tracking-wider"
+                className={`text-[9px] font-black px-2.5 py-1 rounded-lg border-[2px] border-[#0a0a1a] uppercase tracking-wider ${cfg.neonClass} neon-flicker`}
                 style={{ fontFamily: "Orbitron, sans-serif", background: cfg.bg, color: cfg.textColor, boxShadow: "1px 1px 0 #0a0a1a" }}
               >
                 {cfg.label}

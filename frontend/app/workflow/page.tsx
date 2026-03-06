@@ -1,5 +1,6 @@
 import Link from "next/link";
 import PixelIcon from "@/components/shared/PixelIcon";
+import ScrollReveal from "@/components/shared/ScrollReveal";
 import { getOpportunities } from "@/lib/airtable";
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -241,23 +242,23 @@ export default async function WorkflowPage() {
     <div className="min-h-screen pb-28" style={{ background: "#1565e8" }}>
 
       {/* ── Header ─────────────────────────────────── */}
-      <div className="sticky top-0 z-30 px-4 pt-4 pb-3"
+      <div className="sticky top-0 z-30 px-4 pt-4 pb-3 scanlines"
         style={{ background: "#fffbf0", borderBottom: "3px solid #0a0a1a" }}>
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl border-[2.5px] border-[#0a0a1a] flex items-center justify-center"
+          <div className="w-10 h-10 rounded-xl border-[2.5px] border-[#0a0a1a] flex items-center justify-center float-pixel"
             style={{ background: "#e8d4ff", boxShadow: "3px 3px 0 #7c3aed" }}>
-            <PixelIcon name="lightning" size={20} color="#7c3aed" />
+            <PixelIcon name="lightning" size={20} color="#7c3aed" glow />
           </div>
           <div>
             <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#aaaacc]"
               style={{ fontFamily: "Orbitron, sans-serif" }}>HOW IT WORKS</p>
-            <h1 className="text-xl font-black text-[#0a0a1a] leading-none"
+            <h1 className="text-xl font-black text-[#0a0a1a] leading-none glitch-text"
               style={{ fontFamily: "Orbitron, sans-serif" }}>WORKFLOW</h1>
           </div>
-          <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-xl border-[2px] border-[#0a0a1a]"
+          <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-xl border-[2px] border-[#0a0a1a] btn-glow-lime"
             style={{ background: "#b8ffda", boxShadow: "2px 2px 0 #00a83a" }}>
-            <PixelIcon name="lightning" size={10} color="#00a83a" />
-            <span className="text-[8px] font-black text-[#00a83a]"
+            <PixelIcon name="lightning" size={10} color="#00a83a" glow />
+            <span className="text-[8px] font-black neon-lime neon-flicker"
               style={{ fontFamily: "Orbitron, sans-serif" }}>AGENTS ACTIVE</span>
           </div>
         </div>
@@ -266,12 +267,13 @@ export default async function WorkflowPage() {
       <div className="px-4 pt-5 max-w-2xl mx-auto space-y-6">
 
         {/* ── Intro banner ───────────────────────────── */}
+        <ScrollReveal delay={0}>
         <div className="rounded-2xl border-[2.5px] border-[#0a0a1a] p-5"
           style={{ background: "#fffbf0", boxShadow: "5px 5px 0 #0a0a1a" }}>
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl border-[2px] border-[#0a0a1a] flex items-center justify-center shrink-0"
               style={{ background: "#b8ffda", boxShadow: "2px 2px 0 #00a83a" }}>
-              <PixelIcon name="rocket" size={18} color="#00a83a" />
+              <PixelIcon name="rocket" size={18} color="#00a83a" glow />
             </div>
             <div>
               <p className="text-[10px] font-black uppercase tracking-widest text-[#7c3aed] mb-1"
@@ -286,11 +288,13 @@ export default async function WorkflowPage() {
             </div>
           </div>
         </div>
+        </ScrollReveal>
 
         {/* ── Pipeline stages ────────────────────────── */}
+        <ScrollReveal delay={60}>
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <PixelIcon name="pipeline" size={13} color="#fffbf0" />
+            <PixelIcon name="pipeline" size={13} color="#fffbf0" glow />
             <span className="text-[11px] font-black uppercase tracking-widest text-[#fffbf0]"
               style={{ fontFamily: "Orbitron, sans-serif" }}>THE 5 STAGES</span>
           </div>
@@ -309,14 +313,19 @@ export default async function WorkflowPage() {
                       style={{ background: stage.bg, borderBottom: "2.5px solid #0a0a1a" }}>
                       <div className="w-9 h-9 rounded-xl border-[2px] border-[#0a0a1a] flex items-center justify-center shrink-0"
                         style={{ background: "#ffffff", boxShadow: `2px 2px 0 ${stage.shadow}` }}>
-                        <PixelIcon name={stage.icon} size={16} color={stage.color} />
+                        <PixelIcon name={stage.icon} size={16} color={stage.color} glow />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="text-[8px] font-black text-[#0a0a1a] opacity-50"
                             style={{ fontFamily: "Orbitron, sans-serif" }}>{stage.num}</span>
-                          <span className="text-sm font-black text-[#0a0a1a]"
-                            style={{ fontFamily: "Orbitron, sans-serif" }}>{stage.name}</span>
+                          <span className="text-sm font-black"
+                            style={{
+                              fontFamily: "'Press Start 2P', monospace",
+                              fontSize: "10px",
+                              color: stage.color,
+                              textShadow: `0 0 5px ${stage.color}, 0 0 12px ${stage.color}60`,
+                            }}>{stage.name}</span>
                         </div>
                         <p className="text-[10px] font-semibold text-[#0a0a1a] opacity-70">
                           {stage.tagline}
@@ -334,7 +343,12 @@ export default async function WorkflowPage() {
                         style={{ background: "#ffffff", boxShadow: `2px 2px 0 ${stage.shadow}` }}
                       >
                         <span className="text-lg font-black leading-none"
-                          style={{ fontFamily: "Orbitron, sans-serif", color: stage.color }}>
+                          style={{
+                            fontFamily: "'Press Start 2P', monospace",
+                            fontSize: "14px",
+                            color: stage.color,
+                            textShadow: `0 0 5px ${stage.color}, 0 0 12px ${stage.color}60`,
+                          }}>
                           {count}
                         </span>
                         <span className="text-[6px] font-black text-[#aaaacc]"
@@ -356,7 +370,7 @@ export default async function WorkflowPage() {
                             style={{ background: stage.bg, boxShadow: "1px 1px 0 #0a0a1a" }}>
                             <div className="w-6 h-6 rounded-lg border border-[#0a0a1a] flex items-center justify-center shrink-0"
                               style={{ background: "#ffffff" }}>
-                              <PixelIcon name={a.icon} size={11} color={stage.color} />
+                              <PixelIcon name={a.icon} size={11} color={stage.color} glow />
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
@@ -409,11 +423,13 @@ export default async function WorkflowPage() {
             })}
           </div>
         </div>
+        </ScrollReveal>
 
         {/* ── Agent schedule ──────────────────────────── */}
+        <ScrollReveal delay={80}>
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <PixelIcon name="clock" size={13} color="#fffbf0" />
+            <PixelIcon name="clock" size={13} color="#fffbf0" glow />
             <span className="text-[11px] font-black uppercase tracking-widest text-[#fffbf0]"
               style={{ fontFamily: "Orbitron, sans-serif" }}>AGENT SCHEDULE</span>
           </div>
@@ -423,8 +439,8 @@ export default async function WorkflowPage() {
             <div className="px-4 py-3 border-b-[2px] border-[#0a0a1a]"
               style={{ background: "#e8d4ff" }}>
               <div className="flex items-center gap-2">
-                <PixelIcon name="lightning" size={13} color="#7c3aed" />
-                <span className="text-[10px] font-black text-[#7c3aed] uppercase tracking-widest"
+                <PixelIcon name="lightning" size={13} color="#7c3aed" glow />
+                <span className="text-[10px] font-black neon-purple uppercase tracking-widest"
                   style={{ fontFamily: "Orbitron, sans-serif" }}>RUNS AUTOMATICALLY — NO HUMAN TRIGGER</span>
               </div>
             </div>
@@ -433,7 +449,7 @@ export default async function WorkflowPage() {
                 <div key={i} className="flex items-center gap-3 px-4 py-3">
                   <div className="w-8 h-8 rounded-xl border-[2px] border-[#0a0a1a] flex items-center justify-center shrink-0"
                     style={{ background: item.bg, boxShadow: `2px 2px 0 ${item.color}` }}>
-                    <PixelIcon name={item.icon} size={14} color={item.color} />
+                    <PixelIcon name={item.icon} size={14} color={item.color} glow />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -453,11 +469,13 @@ export default async function WorkflowPage() {
             </div>
           </div>
         </div>
+        </ScrollReveal>
 
         {/* ── Team SOPs ───────────────────────────────── */}
+        <ScrollReveal delay={100}>
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <PixelIcon name="person" size={13} color="#fffbf0" />
+            <PixelIcon name="person" size={13} color="#fffbf0" glow />
             <span className="text-[11px] font-black uppercase tracking-widest text-[#fffbf0]"
               style={{ fontFamily: "Orbitron, sans-serif" }}>TEAM PLAYBOOKS</span>
           </div>
@@ -472,11 +490,16 @@ export default async function WorkflowPage() {
                   style={{ background: member.bg, borderBottom: "2.5px solid #0a0a1a" }}>
                   <div className="w-10 h-10 rounded-xl border-[2px] border-[#0a0a1a] flex items-center justify-center shrink-0"
                     style={{ background: "#ffffff", boxShadow: `2px 2px 0 ${member.shadow}` }}>
-                    <PixelIcon name="person" size={16} color={member.color} />
+                    <PixelIcon name="person" size={16} color={member.color} glow />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-black text-[#0a0a1a]"
-                      style={{ fontFamily: "Orbitron, sans-serif" }}>{member.name}</p>
+                    <p className="text-sm font-black"
+                      style={{
+                        fontFamily: "'Press Start 2P', monospace",
+                        fontSize: "9px",
+                        color: member.color,
+                        textShadow: `0 0 5px ${member.color}, 0 0 12px ${member.color}60`,
+                      }}>{member.name}</p>
                     <p className="text-[10px] text-[#0a0a1a] opacity-60">{member.role} · {member.tagline}</p>
                   </div>
                   <span className="text-[8px] font-black px-2.5 py-1 rounded-xl border-[1.5px] border-[#0a0a1a] shrink-0"
@@ -510,11 +533,13 @@ export default async function WorkflowPage() {
             ))}
           </div>
         </div>
+        </ScrollReveal>
 
         {/* ── Run agents (Kika Howze) ─────────────────── */}
+        <ScrollReveal delay={120}>
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <PixelIcon name="play" size={13} color="#fffbf0" />
+            <PixelIcon name="play" size={13} color="#fffbf0" glow />
             <span className="text-[11px] font-black uppercase tracking-widest text-[#fffbf0]"
               style={{ fontFamily: "Orbitron, sans-serif" }}>RUN AGENTS</span>
             <span className="text-[8px] font-black px-2 py-0.5 rounded border border-[#fffbf0] text-[#fffbf0] opacity-60"
@@ -561,6 +586,7 @@ export default async function WorkflowPage() {
             </div>
           </div>
         </div>
+        </ScrollReveal>
 
       </div>
     </div>

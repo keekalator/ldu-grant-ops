@@ -8,8 +8,10 @@ import FieldEditor       from "@/components/opportunity/FieldEditor";
 import ActionGuide       from "@/components/opportunity/ActionGuide";
 import WritingPlanPanel  from "@/components/opportunity/WritingPlanPanel";
 import WritingWorkflow   from "@/components/opportunity/WritingWorkflow";
-import EnrichPanel       from "@/components/opportunity/EnrichPanel";
-import DisqualifyButton  from "@/components/opportunity/DisqualifyButton";
+import EnrichPanel           from "@/components/opportunity/EnrichPanel";
+import DisqualifyButton      from "@/components/opportunity/DisqualifyButton";
+import SubmissionChecklist   from "@/components/opportunity/SubmissionChecklist";
+import type { SubmissionRequirements } from "@/components/opportunity/SubmissionChecklist";
 import PixelIcon      from "@/components/shared/PixelIcon";
 import { formatCurrency, formatDeadline, daysUntilDeadline, abbreviatePillar } from "@/lib/utils";
 import { getEntityStyle } from "@/lib/entities";
@@ -119,6 +121,16 @@ async function OpportunityDetail({ id }: { id: string }) {
   const source      = fields.Source;
   const notes       = (fields.Notes as string) ?? "";
   const writingPlan   = (fields["Writing Plan"] as string | undefined) ?? null;
+  // Parse submission requirements out of the writing plan JSON (if present)
+  let submissionReqs: SubmissionRequirements | null = null;
+  if (writingPlan) {
+    try {
+      const parsed = JSON.parse(writingPlan);
+      if (parsed?.submissionRequirements?.documents?.length) {
+        submissionReqs = parsed.submissionRequirements as SubmissionRequirements;
+      }
+    } catch { /* ignore */ }
+  }
   const dqReason      = (fields["Disqualification Reason"] as string | undefined) ?? null;
   const isDisqualified = status === "Disqualified";
   const score         = fields["Weighted Score"] ?? fields.Score;
@@ -311,7 +323,7 @@ async function OpportunityDetail({ id }: { id: string }) {
           initialDescription={fields.Description as string | undefined}
           initialEligibility={fields["Eligibility Notes"] as string | undefined}
           initialWhyQualify={fields["Why We Qualify"] as string | undefined}
-          initialFunder={(fields["Funder"] ?? fields["Funder Name"]) as string | undefined}
+          initialFunder={(fields["Funder Name"] ?? fields["Funder"]) as string | undefined}
         />
 
         {/* ── Funder intel ─────────────────────────────────── */}
@@ -321,8 +333,8 @@ async function OpportunityDetail({ id }: { id: string }) {
             <EditRow icon="building" label="FUNDER">
               <FieldEditor
                 opportunityId={opp.id}
-                fieldName="Funder"
-                value={fields["Funder"] ?? fields["Funder Name"]}
+                fieldName="Funder Name"
+                value={(fields["Funder Name"] ?? fields["Funder"]) as string | undefined}
                 type="text"
                 placeholder="Funder organization name"
                 emptyLabel="Tap to add funder name"
@@ -332,7 +344,7 @@ async function OpportunityDetail({ id }: { id: string }) {
               <FieldEditor
                 opportunityId={opp.id}
                 fieldName="Funder Website"
-                value={fields["Funder Website"]}
+                value={fields["Funder Website"] as string | undefined}
                 type="url"
                 placeholder="https://…"
                 emptyLabel="Tap to add source URL"
@@ -358,6 +370,17 @@ async function OpportunityDetail({ id }: { id: string }) {
             grantName={name}
           />
         </Section>
+
+        {/* ── Submission Package Checklist ──────────────────── */}
+        {submissionReqs && (
+          <Section icon="filter" label="SUBMISSION PACKAGE" iconBg="#ffe4c4">
+            <SubmissionChecklist
+              opportunityId={opp.id}
+              requirements={submissionReqs}
+              rawPlan={writingPlan ?? "{}"}
+            />
+          </Section>
+        )}
 
 
         {/* ── Record details ────────────────────────────────── */}

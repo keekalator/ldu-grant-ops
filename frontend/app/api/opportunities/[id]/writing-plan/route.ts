@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse }  from "next/server";
+import { fetchBestGrantPage }         from "@/lib/fetchGrantPage";
 
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID!;
 const AIRTABLE_TOKEN   = process.env.AIRTABLE_API_TOKEN!;
@@ -18,6 +19,23 @@ async function fetchRecord(id: string) {
 
 // ─── Save plan back to Airtable ───────────────────────────────────────────────
 
+export interface SubmissionDoc {
+  id: string;
+  name: string;
+  type: "narrative" | "form" | "attachment" | "letter" | "registration" | "other";
+  required: boolean;
+  notes: string;
+  completed: boolean;
+}
+
+export interface SubmissionRequirements {
+  applicationFormat: string;   // "LOI", "Full Application", "Online Portal + PDF", etc.
+  submissionMethod: string;    // "Online portal", "Email", "Postal mail"
+  portalUrl: string;           // direct application URL if known
+  pageLimits: string;          // e.g. "Narrative: 5 pages, Budget: 2 pages"
+  documents: SubmissionDoc[];
+}
+
 interface Plan {
   angle?: string;
   sections?: string[];
@@ -25,6 +43,9 @@ interface Plan {
   materials?: string[];
   estimatedHours?: number;
   winTips?: string[];
+  approved?: boolean;
+  draft?: string;
+  submissionRequirements?: SubmissionRequirements;
 }
 
 function buildNextSteps(plan: Plan): string {
@@ -76,29 +97,37 @@ async function saveplan(id: string, plan: Plan) {
 
 // ─── Build the Claude prompt ──────────────────────────────────────────────────
 
-function buildPrompt(fields: Record<string, unknown>): string {
+function buildPrompt(fields: Record<string, unknown>, pageText?: string | null, pageUrl?: string | null): string {
   const lines: string[] = [];
   if (fields["Grant Name"])          lines.push(`Grant Name: ${fields["Grant Name"]}`);
-  const funder = fields["Funder"] ?? fields["Funder Name"];
+  const funder = fields["Funder Name"] ?? fields["Funder"];
   if (funder)                        lines.push(`Funder: ${funder}`);
   if (fields["Description"])         lines.push(`Description: ${fields["Description"]}`);
   if (fields["Pillar"])              lines.push(`LDU Pillars: ${(fields["Pillar"] as string[]).join(", ")}`);
   if (fields["Award Amount Range"])  lines.push(`Award Amount: $${Number(fields["Award Amount Range"]).toLocaleString()}`);
   if (fields["Deadline"])            lines.push(`Deadline: ${fields["Deadline"]}`);
   if (fields["Submitting Entity"])   lines.push(`Submitting Entity: ${fields["Submitting Entity"]}`);
-  if (fields["Eligibility Notes"])   lines.push(`Eligibility: ${fields["Eligibility Notes"]}`);
-  if (fields["Why We Qualify"])      lines.push(`Why LDU Qualifies: ${fields["Why We Qualify"]}`);
+  if (fields["Eligibility Notes"])   lines.push(`Eligibility (previously extracted): ${fields["Eligibility Notes"]}`);
+  if (fields["Why We Qualify"])      lines.push(`Why LDU Qualifies (previously extracted): ${fields["Why We Qualify"]}`);
   if (fields["Source"])              lines.push(`Source: ${fields["Source"]}`);
   if (fields["Notes"])               lines.push(`Context: ${String(fields["Notes"]).slice(0, 400)}`);
 
   const grantDetails = lines.join("\n") || "No details available.";
 
+  // Cap page content at 6 000 chars to leave plenty of output budget for the JSON
+  const cappedPageText = pageText ? pageText.slice(0, 6_000) : null;
+  const liveSection = cappedPageText
+    ? `\nLIVE GRANT GUIDELINES (fetched from ${pageUrl ?? "funder website"}):\n─────────────────────────────────────────\n${cappedPageText}\n─────────────────────────────────────────\nUse the live content above as your PRIMARY source for required sections, page limits, and submission requirements.\n`
+    : "";
+
   return `You are a senior grant writer for Life Development University (LDU), a 501(c)(3) nonprofit creative campus on Crenshaw Boulevard in Los Angeles.
 
-Given the grant details below, generate a focused WRITING PLAN that tells the team exactly how to win this grant. Be specific to this funder — not generic advice.
+Given the grant details and LIVE GUIDELINES below, generate a focused WRITING PLAN and SUBMISSION REQUIREMENTS checklist.
+The live guidelines are the authoritative source — use them to extract real section names, page limits, and required documents.
 
 GRANT DETAILS:
 ${grantDetails}
+${liveSection}
 
 Return ONLY a JSON object (no markdown, no explanation) with this exact structure:
 {
@@ -115,7 +144,39 @@ Return ONLY a JSON object (no markdown, no explanation) with this exact structur
   "estimatedHours": 8,
   "winTips": [
     "Funder-specific tip that increases win probability"
-  ]
+  ],
+  "submissionRequirements": {
+    "applicationFormat": "What type of submission — e.g. 'Letter of Inquiry (LOI)', 'Full Application', 'Online Portal (Submittable)', 'Email to program officer', 'PDF via portal'",
+    "submissionMethod": "How to submit — e.g. 'Online portal at [URL]', 'Email to grants@funder.org', 'Postal mail'",
+    "portalUrl": "Direct URL to the application portal or guidelines page, or empty string if unknown",
+    "pageLimits": "Page or word limits for narrative sections, e.g. '5-page narrative, 2-page budget narrative, 1-page org summary' — or 'Not specified' if unknown",
+    "documents": [
+      {
+        "id": "1",
+        "name": "Project Narrative",
+        "type": "narrative",
+        "required": true,
+        "notes": "e.g. 5 pages max, double-spaced, 12pt font",
+        "completed": false
+      },
+      {
+        "id": "2",
+        "name": "Itemized Budget",
+        "type": "form",
+        "required": true,
+        "notes": "Use funder's budget template if provided",
+        "completed": false
+      },
+      {
+        "id": "3",
+        "name": "IRS 501(c)(3) Determination Letter",
+        "type": "attachment",
+        "required": true,
+        "notes": "LDU has this on file",
+        "completed": false
+      }
+    ]
+  }
 }
 
 Rules:
@@ -123,7 +184,9 @@ Rules:
 - themes: 3–5 themes
 - materials: everything needed (narratives, budget, letters, attachments, registrations)
 - estimatedHours: realistic total writing hours (integer)
-- winTips: 2–4 highly specific tips based on this funder's known preferences`;
+- winTips: 2–4 highly specific tips based on this funder's known preferences
+- submissionRequirements.documents: list EVERY document this funder requires — narratives, forms, attachments, letters of support, reference letters, board lists, financials, registrations. Use type: "narrative" | "form" | "attachment" | "letter" | "registration" | "other"
+- If you don't know something for certain, note "Verify on funder's website" rather than fabricating`;
 }
 
 // ─── POST — generate a new writing plan ──────────────────────────────────────
@@ -141,40 +204,69 @@ export async function POST(
   }
 
   const fields = record.fields as Record<string, unknown>;
-  const prompt = buildPrompt(fields);
 
-  // 2. Call Claude
-  const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key": ANTHROPIC_KEY,
-      "anthropic-version": "2023-06-01",
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-6",
-      max_tokens: 2048,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
+  // 2. Fetch the actual grant guidelines page
+  const funderWebsite = fields["Funder Website"] as string | undefined;
+  const sourceUrl     = fields["Source"]         as string | undefined;
+  const pageResult    = await fetchBestGrantPage(funderWebsite, sourceUrl);
 
-  if (!claudeRes.ok) {
-    const err = await claudeRes.text();
-    return NextResponse.json({ error: `Claude API error: ${err}` }, { status: 500 });
+  console.log(
+    `[writing-plan] ${id} — web fetch: ${pageResult?.success ? `✓ ${pageResult.finalUrl}` : "failed, using training data"}`
+  );
+
+  const prompt = buildPrompt(fields, pageResult?.text ?? null, pageResult?.finalUrl ?? null);
+
+  // ── Claude call helper ────────────────────────────────────────────────────
+  async function callClaude(messages: { role: string; content: string }[]) {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key":         ANTHROPIC_KEY,
+        "anthropic-version": "2023-06-01",
+        "content-type":      "application/json",
+      },
+      body: JSON.stringify({
+        model:      "claude-sonnet-4-6",
+        max_tokens: 6000,
+        messages,
+      }),
+    });
+    if (!res.ok) throw new Error(`Claude API error: ${await res.text()}`);
+    return res.json();
   }
 
-  const claudeData = await claudeRes.json();
-  let raw: string = claudeData.content?.[0]?.text ?? "";
+  // 3. Call Claude — with continuation if response is truncated
+  let raw: string;
+  try {
+    const data1 = await callClaude([{ role: "user", content: prompt }]);
+    raw = (data1.content?.[0]?.text ?? "").trim();
+    const stopReason = data1.stop_reason;
 
-  // Strip accidental markdown fences
-  raw = raw.trim();
-  if (raw.startsWith("```")) {
-    raw = raw.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "").trim();
-  }
+    // Strip accidental markdown fences
+    if (raw.startsWith("```")) {
+      raw = raw.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "").trim();
+    }
 
-  // If truncated mid-JSON, attempt to close the object so parse can succeed
-  if (raw.startsWith("{") && !raw.endsWith("}")) {
-    raw = raw + '"}]}';  // best-effort close
+    // If truncated (hit max_tokens before closing the JSON), ask Claude to finish
+    if (stopReason === "max_tokens" && raw.startsWith("{")) {
+      const data2 = await callClaude([
+        { role: "user",      content: prompt },
+        { role: "assistant", content: raw },
+        {
+          role: "user",
+          content:
+            "Your JSON was cut off. Continue from exactly where you stopped — " +
+            "output ONLY the remaining JSON text needed to complete and close the object. " +
+            "Do not repeat what you already wrote. Do not add any explanation.",
+        },
+      ]);
+      const continuation = (data2.content?.[0]?.text ?? "").trim();
+      raw = raw + continuation;
+      // Strip any fences that snuck into the continuation
+      raw = raw.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "").trim();
+    }
+  } catch (e) {
+    return NextResponse.json({ error: `Claude API error: ${e}` }, { status: 500 });
   }
 
   let plan: Plan;
@@ -187,6 +279,17 @@ export async function POST(
     plan.winTips   = Array.isArray(plan.winTips)   ? plan.winTips   : [];
     plan.estimatedHours = Number(plan.estimatedHours) || 4;
     plan.angle     = plan.angle ?? "";
+    // Sanitize submission requirements
+    if (plan.submissionRequirements) {
+      const sr = plan.submissionRequirements as SubmissionRequirements;
+      sr.applicationFormat = sr.applicationFormat ?? "Full Application";
+      sr.submissionMethod  = sr.submissionMethod  ?? "See funder website";
+      sr.portalUrl         = sr.portalUrl         ?? "";
+      sr.pageLimits        = sr.pageLimits        ?? "Not specified";
+      sr.documents = Array.isArray(sr.documents)
+        ? sr.documents.map((d, i) => ({ ...d, id: d.id ?? String(i + 1), completed: false }))
+        : [];
+    }
   } catch {
     return NextResponse.json(
       { error: `Claude returned unparseable JSON. Try regenerating. Raw: ${raw.slice(0, 200)}` },
@@ -194,7 +297,7 @@ export async function POST(
     );
   }
 
-  // 3. Save back to Airtable — log errors but don't fail the request
+  // 4. Save back to Airtable — log errors but don't fail the request
   try {
     await saveplan(id, plan);
   } catch (saveErr) {

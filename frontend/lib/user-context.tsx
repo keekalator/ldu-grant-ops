@@ -181,34 +181,34 @@ function StatBar({ label, value, color }: { label: string; value: number; color:
 
 const CHARACTERS = [
   {
-    member: TEAM_MEMBERS[0], // Kika Keith
-    charId:  "kika-keith",
-    class:   "CLOSER",
-    tagline: "Approves packages · Closes deals · Owns the relationships",
-    stats:   { Strategy: 5, Relationships: 5, Speed: 3, Research: 2, Compliance: 2 },
-    accent:  "#ff1e78",
-    badge:   "CEO",
-    glow:    "rgba(255,30,120,0.35)",
+    member:    TEAM_MEMBERS[0],
+    charId:    "kika-keith",
+    charClass: "CLOSER",
+    tagline:   "Approves packages · Closes deals · Owns the relationships",
+    stats:     { Strategy: 5, Relationships: 5, Speed: 3, Research: 2, Compliance: 2 },
+    accent:    "#ff1e78",
+    badge:     "CEO",
+    glow:      "rgba(255,30,120,0.35)",
   },
   {
-    member: TEAM_MEMBERS[1], // Kika Howze
-    charId:  "kika-howze",
-    class:   "ENGINEER",
-    tagline: "Runs agents · Manages pipeline · Reviews every draft",
-    stats:   { Strategy: 3, Relationships: 3, Speed: 5, Research: 5, Compliance: 3 },
-    accent:  "#7c3aed",
-    badge:   "IMPL",
-    glow:    "rgba(124,58,237,0.35)",
+    member:    TEAM_MEMBERS[1],
+    charId:    "kika-howze",
+    charClass: "ENGINEER",
+    tagline:   "Runs agents · Manages pipeline · Reviews every draft",
+    stats:     { Strategy: 3, Relationships: 3, Speed: 5, Research: 5, Compliance: 3 },
+    accent:    "#7c3aed",
+    badge:     "IMPL",
+    glow:      "rgba(124,58,237,0.35)",
   },
   {
-    member: TEAM_MEMBERS[2], // Sheila
-    charId:  "sheila",
-    class:   "OPS",
-    tagline: "Government paperwork · Post-award compliance · Registrations",
-    stats:   { Strategy: 2, Relationships: 3, Speed: 4, Research: 3, Compliance: 5 },
-    accent:  "#ffb800",
-    badge:   "OPS",
-    glow:    "rgba(255,184,0,0.35)",
+    member:    TEAM_MEMBERS[2],
+    charId:    "sheila",
+    charClass: "OPS",
+    tagline:   "Government paperwork · Post-award compliance · Registrations",
+    stats:     { Strategy: 2, Relationships: 3, Speed: 4, Research: 3, Compliance: 5 },
+    accent:    "#ffb800",
+    badge:     "OPS",
+    glow:      "rgba(255,184,0,0.35)",
   },
 ];
 
@@ -216,7 +216,14 @@ const CHARACTERS = [
 
 function OnboardingModal({ onSelect }: { onSelect: (m: TeamMember) => void }) {
   const [hovered, setHovered] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
   const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
+
+  function handleSelect(member: TeamMember, charId: string) {
+    setSelected(charId);
+    // Small delay so the press animation is visible
+    setTimeout(() => onSelect(member as TeamMember), 180);
+  }
 
   return (
     // iOS-reliable modal pattern:
@@ -241,47 +248,81 @@ function OnboardingModal({ onSelect }: { onSelect: (m: TeamMember) => void }) {
         style={{ WebkitOverflowScrolling: "touch" }}
       >
       {/* All content in one scrollable flow */}
-      <div className="relative px-4 pt-6 pb-24 flex flex-col gap-3 max-w-sm mx-auto">
+      <div className="relative px-4 pt-6 pb-28 flex flex-col gap-4 max-w-sm mx-auto">
 
-        {/* Header */}
+        {/* Header (scrolls with content — avoids sticky-in-overflow-hidden bug) */}
         <div className="text-center pb-1">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/icons/icon-192.png"
             alt="LDU"
-            className="w-14 h-14 mx-auto mb-2 rounded-xl border-[3px] border-[#fffbf0]"
+            className="w-14 h-14 mx-auto mb-2 rounded-xl border-[3px] border-[#fffbf0] float-pixel"
             style={{ boxShadow: "4px 4px 0 #0a0a1a" }}
           />
-          <h1 className="text-xl font-black text-[#fffbf0] leading-tight"
-            style={{ fontFamily: "Orbitron, sans-serif",
-              textShadow: "3px 3px 0 #0a0a1a" }}>
+          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#fffbf0] opacity-50 mb-1"
+            style={{ fontFamily: "Orbitron, sans-serif" }}>LIFE DEVELOPMENT UNIVERSITY</p>
+          <h1 className="text-xl font-black text-[#fffbf0] leading-tight glitch-text"
+            style={{ fontFamily: "Orbitron, sans-serif", textShadow: "3px 3px 0 #0a0a1a" }}>
             SELECT YOUR CHARACTER
           </h1>
+          {/* Scroll hint */}
+          <div className="flex items-center justify-center gap-1.5 mt-2">
+            {CHARACTERS.map((_, i) => (
+              <div key={i} className="w-2 h-2 rounded-full border border-[#fffbf0]/40"
+                style={{ background: "rgba(255,255,255,0.3)" }} />
+            ))}
+          </div>
         </div>
 
         {/* Character cards */}
-        {CHARACTERS.map(({ member, charId, accent, glow }) => {
+        {CHARACTERS.map(({ member, charId, accent, glow, charClass, tagline, stats }, idx) => {
           const isHovered = hovered === charId;
+          const isSelected = selected === charId;
           const imgFailed = imgErrors[charId];
           return (
             <button
               key={member.id}
-              onClick={() => onSelect(member as TeamMember)}
+              onClick={() => handleSelect(member as TeamMember, charId)}
               onMouseEnter={() => setHovered(charId)}
               onMouseLeave={() => setHovered(null)}
-              className="w-full rounded-2xl border-[3px] border-[#0a0a1a] overflow-hidden transition-all duration-100 active:translate-y-[2px] active:shadow-none focus:outline-none"
+              className="w-full rounded-2xl border-[3px] border-[#0a0a1a] overflow-hidden focus:outline-none"
               style={{
-                boxShadow: isHovered
-                  ? `6px 6px 0 ${accent}, 0 0 30px ${glow}`
-                  : `4px 4px 0 ${accent}`,
-                transform: isHovered ? "translateY(-2px)" : "none",
+                boxShadow: isSelected
+                  ? `2px 2px 0 ${accent}`
+                  : isHovered
+                    ? `6px 6px 0 ${accent}, 0 0 30px ${glow}`
+                    : `4px 4px 0 ${accent}`,
+                transform: isSelected
+                  ? "translate(2px, 2px)"
+                  : isHovered ? "translateY(-2px)" : "none",
+                transition: "transform 0.1s ease, box-shadow 0.1s ease",
+                animationDelay: `${idx * 0.08}s`,
               }}
             >
+              {/* Class badge */}
+              <div
+                className="px-3 py-1.5 flex items-center justify-between border-b-[2px] border-[#0a0a1a]"
+                style={{ background: accent }}
+              >
+                <span
+                  className="text-[9px] font-black text-white tracking-[0.2em]"
+                  style={{ fontFamily: "'Press Start 2P', monospace",
+                    textShadow: `0 0 6px rgba(255,255,255,0.6)` }}
+                >
+                  {charClass}
+                </span>
+                <div className="flex gap-1">
+                  {[0,1,2].map(i => (
+                    <div key={i} className="w-1.5 h-1.5 rounded-sm bg-white opacity-70" />
+                  ))}
+                </div>
+              </div>
+
               {/* Card image or pixel fallback */}
-              <div className="min-h-[120px] flex items-center justify-center relative bg-[#fffbf0]/10">
+              <div className="min-h-[140px] flex items-center justify-center relative bg-[#fffbf0]/10">
                 {imgFailed ? (
-                  <div className="flex flex-col items-center gap-2 py-4">
-                    <CharacterSprite charId={charId} color={accent} size={56} />
+                  <div className="flex flex-col items-center gap-2 py-6">
+                    <CharacterSprite charId={charId} color={accent} size={64} />
                     <span className="text-sm font-black text-[#fffbf0]"
                       style={{ fontFamily: "Orbitron, sans-serif" }}>
                       {member.id.split(" (")[0].toUpperCase()}
@@ -292,22 +333,49 @@ function OnboardingModal({ onSelect }: { onSelect: (m: TeamMember) => void }) {
                   <img
                     src={`/characters/${charId}.png`}
                     alt={member.id}
-                    className="w-full block h-[180px] object-cover object-top"
+                    className="w-full block h-[200px] object-cover object-top"
                     style={{ imageRendering: "pixelated" }}
                     onError={() => setImgErrors((e) => ({ ...e, [charId]: true }))}
                   />
                 )}
               </div>
 
+              {/* Tagline + stats */}
+              <div className="px-4 py-3 space-y-2.5" style={{ background: "#fffbf0", borderTop: "2px solid #0a0a1a" }}>
+                <p className="text-[10px] text-[#555566] leading-relaxed font-medium">{tagline}</p>
+
+                {/* Stat bars */}
+                <div className="space-y-1.5">
+                  {Object.entries(stats).map(([key, val]) => (
+                    <div key={key} className="flex items-center gap-2">
+                      <span className="text-[7px] font-black w-16 shrink-0 uppercase text-right"
+                        style={{ fontFamily: "Orbitron, sans-serif", color: "rgba(10,10,26,0.45)" }}>
+                        {key}
+                      </span>
+                      <div className="flex gap-0.5 flex-1">
+                        {[1,2,3,4,5].map(i => (
+                          <div
+                            key={i}
+                            className="h-2 flex-1 rounded-sm border border-[#0a0a1a]"
+                            style={{ background: i <= val ? accent : "rgba(10,10,26,0.08)" }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* CTA */}
               <div
-                className="w-full py-2 px-4 flex items-center justify-between border-t-[2px] border-[#0a0a1a]"
-                style={{ background: accent }}
+                className="w-full py-2.5 px-4 flex items-center justify-between border-t-[2px] border-[#0a0a1a]"
+                style={{ background: isSelected ? "#0a0a1a" : accent }}
               >
                 <span className="text-[10px] font-black text-white tracking-widest"
                   style={{ fontFamily: "Orbitron, sans-serif" }}>
-                  TAP TO SELECT
+                  {isSelected ? "LOADING..." : "TAP TO SELECT"}
                 </span>
-                <PixelIcon name="play" size={14} color="#ffffff" />
+                <PixelIcon name={isSelected ? "check" : "play"} size={14} color="#ffffff" />
               </div>
             </button>
           );
@@ -315,7 +383,7 @@ function OnboardingModal({ onSelect }: { onSelect: (m: TeamMember) => void }) {
 
         <p className="text-[8px] text-[#fffbf0] opacity-40 text-center tracking-widest"
           style={{ fontFamily: "Orbitron, sans-serif" }}>
-          SWITCH ANYTIME VIA THE ? BUTTON
+          SCROLL TO SEE ALL {CHARACTERS.length} CHARACTERS · SWITCH ANYTIME VIA THE ? BUTTON
         </p>
       </div>
       </div>

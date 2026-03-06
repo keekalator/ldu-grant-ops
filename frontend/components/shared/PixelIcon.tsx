@@ -349,6 +349,7 @@ interface PixelIconProps {
   size?: number;        // rendered px size
   color?: string;       // fill color for pixels
   className?: string;
+  glow?: boolean;       // when true, adds neon drop-shadow in the icon's own color
 }
 
 export default function PixelIcon({
@@ -356,6 +357,7 @@ export default function PixelIcon({
   size = 20,
   color = "#0a0a1a",
   className = "",
+  glow = false,
 }: PixelIconProps) {
   const grid = ICONS[name];
   if (!grid) return null;
@@ -366,6 +368,10 @@ export default function PixelIcon({
   const viewW = cols * cellSize;
   const viewH = rows * cellSize;
 
+  const glowStyle = glow
+    ? { filter: `drop-shadow(0 0 3px ${color}) drop-shadow(0 0 7px ${color})` }
+    : undefined;
+
   return (
     <svg
       width={size}
@@ -373,6 +379,7 @@ export default function PixelIcon({
       viewBox={`0 0 ${viewW} ${viewH}`}
       fill="none"
       className={className}
+      style={glowStyle}
       aria-hidden="true"
     >
       {grid.map((row, r) =>

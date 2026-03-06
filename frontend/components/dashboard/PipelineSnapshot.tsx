@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import PixelIcon from "@/components/shared/PixelIcon";
 import { formatCurrency } from "@/lib/utils";
@@ -111,6 +112,26 @@ function resolvePillar(raw: string): PillarDef | null {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function PipelineSnapshot({ stats }: { stats: PipelineStats }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [barsVisible, setBarsVisible] = useState(false);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          // Small delay so the card reveal animation completes first
+          setTimeout(() => setBarsVisible(true), 150);
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.15 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   // Merge raw Airtable keys into PILLARS
   const counts: number[] = new Array(PILLARS.length).fill(0);
   for (const [rawKey, count] of Object.entries(stats.byPillar)) {
@@ -124,7 +145,7 @@ export default function PipelineSnapshot({ stats }: { stats: PipelineStats }) {
   const total = Math.max(counts.reduce((a, b) => a + b, 0), 1);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" ref={containerRef}>
 
       {/* ── Overview bar — each segment colored ──────────── */}
       <div>
@@ -142,9 +163,14 @@ export default function PipelineSnapshot({ stats }: { stats: PipelineStats }) {
             return (
               <div
                 key={p.pillarKey}
-                className="h-full flex items-center justify-center text-white font-black shrink-0"
-                style={{ width: `${pct}%`, background: p.color, fontSize: 7,
-                  fontFamily: "Orbitron, sans-serif", minWidth: 6 }}
+                className="h-full flex items-center justify-center text-white font-black shrink-0 bar-fill"
+                style={{
+                  width: barsVisible ? `${pct}%` : "0%",
+                  background: p.color, fontSize: 7,
+                  fontFamily: "Orbitron, sans-serif",
+                  minWidth: barsVisible && pct > 0 ? 6 : 0,
+                  transitionDelay: `${i * 60}ms`,
+                }}
                 title={`${p.name}: ${counts[i]} grants`}
               >
                 {pct > 8 ? counts[i] : ""}
@@ -183,10 +209,14 @@ export default function PipelineSnapshot({ stats }: { stats: PipelineStats }) {
                 style={{ background: p.color }}
               >
                 <div className="flex items-center gap-2">
-                  <PixelIcon name={p.icon} size={14} color="white" />
+                  <PixelIcon name={p.icon} size={14} color="white" glow />
                   <span
                     className="text-[11px] font-black text-white uppercase tracking-wider"
-                    style={{ fontFamily: "Orbitron, sans-serif" }}
+                    style={{
+                      fontFamily: "'Press Start 2P', monospace",
+                      fontSize: "8px",
+                      textShadow: "0 0 6px rgba(255,255,255,0.6), 0 0 14px rgba(255,255,255,0.3)",
+                    }}
                   >
                     {p.name}
                   </span>
@@ -207,14 +237,19 @@ export default function PipelineSnapshot({ stats }: { stats: PipelineStats }) {
                 <p className="text-[11px] text-[#555566] mb-2">{p.what}</p>
 
                 <div className="flex items-center gap-3">
-                  {/* Colored progress bar */}
+                  {/* Colored progress bar — animates when scrolled into view */}
                   <div
                     className="flex-1 h-3 rounded-full border-[2px] border-[#0a0a1a] overflow-hidden"
                     style={{ background: "#e8e8ee" }}
                   >
                     <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{ width: `${pct}%`, background: p.color, minWidth: count > 0 ? 8 : 0 }}
+                      className="h-full rounded-full bar-fill"
+                      style={{
+                        width: barsVisible ? `${pct}%` : "0%",
+                        background: p.color,
+                        minWidth: barsVisible && count > 0 ? 8 : 0,
+                        transitionDelay: `${i * 80 + 200}ms`,
+                      }}
                     />
                   </div>
 
@@ -225,7 +260,12 @@ export default function PipelineSnapshot({ stats }: { stats: PipelineStats }) {
                   >
                     <span
                       className="text-sm font-black"
-                      style={{ fontFamily: "Orbitron, sans-serif", color: p.color }}
+                      style={{
+                        fontFamily: "'Press Start 2P', monospace",
+                        fontSize: "10px",
+                        color: p.color,
+                        textShadow: `0 0 4px ${p.color}, 0 0 10px ${p.color}60`,
+                      }}
                     >
                       {count}
                     </span>

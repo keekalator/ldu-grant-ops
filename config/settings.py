@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     make_webhook_decline_recovery: str = Field(default="")
     make_webhook_weekly_summary: str = Field(default="")
 
+    # --- Higgsfield (Image-to-Video AI) ---
+    higgsfield_api_key: Optional[str] = Field(default=None, description="Higgsfield API key")
+    higgsfield_api_secret: Optional[str] = Field(default=None, description="Higgsfield API secret")
+
     # --- Instrumentl ---
     instrumentl_api_key: Optional[str] = Field(default=None)
 

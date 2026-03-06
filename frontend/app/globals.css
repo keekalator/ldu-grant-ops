@@ -164,3 +164,307 @@ body {
 @media (display-mode: standalone) {
   body { padding-top: env(safe-area-inset-top); }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOTION ENHANCEMENT LAYER
+   All additions below. Zero changes to colors, layout, or copy above.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Keyframes ──────────────────────────────────────────────────────────── */
+
+@keyframes glitch {
+  0%, 87%, 100% { transform: translate(0); }
+  88%            { transform: translate(-2px, 0); }
+  89%            { transform: translate(2px, 0); }
+  90%            { transform: translate(-1px, 1px); }
+  91%            { transform: translate(1px, -1px); }
+  92%            { transform: translate(0); }
+}
+
+@keyframes revealUp {
+  0%   { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes floatPixel {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33%       { transform: translateY(-5px) rotate(2deg); }
+  66%       { transform: translateY(-2px) rotate(-1deg); }
+}
+
+@keyframes navIconPop {
+  0%   { transform: scale(0.65) rotate(-8deg); opacity: 0.4; }
+  55%  { transform: scale(1.22) rotate(4deg); }
+  80%  { transform: scale(0.96); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes navActivate {
+  0%   { transform: translateY(0px); }
+  40%  { transform: translateY(-9px); }
+  65%  { transform: translateY(-2px); }
+  100% { transform: translateY(-4px); }
+}
+
+@keyframes pinkGlow {
+  0%, 100% { box-shadow: 3px 3px 0 #0a0a1a; }
+  50%       { box-shadow: 3px 3px 0 #0a0a1a, 0 0 14px rgba(255,30,120,0.45); }
+}
+@keyframes yellowGlow {
+  0%, 100% { box-shadow: 3px 3px 0 #0a0a1a; }
+  50%       { box-shadow: 3px 3px 0 #0a0a1a, 0 0 14px rgba(255,225,0,0.55); }
+}
+@keyframes limeGlow {
+  0%, 100% { box-shadow: 3px 3px 0 #0a0a1a; }
+  50%       { box-shadow: 3px 3px 0 #0a0a1a, 0 0 14px rgba(0,217,78,0.45); }
+}
+@keyframes cyanGlow {
+  0%, 100% { box-shadow: 3px 3px 0 #0a0a1a; }
+  50%       { box-shadow: 3px 3px 0 #0a0a1a, 0 0 14px rgba(0,212,255,0.45); }
+}
+
+@keyframes statPop {
+  0%   { transform: scale(0.9); opacity: 0; }
+  60%  { transform: scale(1.04); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes scanMove {
+  0%   { transform: translateY(-100%); opacity: 0.6; }
+  100% { transform: translateY(200%); opacity: 0; }
+}
+
+@keyframes borderPulse {
+  0%, 100% { border-color: inherit; }
+  50%       { border-color: transparent; }
+}
+
+/* ─── Scroll Reveal ──────────────────────────────────────────────────────── */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.reveal-on-scroll.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── Glitch Text ────────────────────────────────────────────────────────── */
+.glitch-text {
+  animation: glitch 5s ease-in-out infinite;
+  display: inline-block;
+}
+
+/* ─── Scanline Overlay ───────────────────────────────────────────────────── */
+.scanlines { position: relative; overflow: hidden; }
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0,0,0,0.022) 3px,
+    rgba(0,0,0,0.022) 4px
+  );
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 2;
+}
+/* Moving scan line */
+.scanlines::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  animation: scanMove 3.5s linear infinite;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* ─── Grant Card Hover Lift ──────────────────────────────────────────────── */
+.grant-card {
+  transition: transform 0.12s ease !important;
+}
+.grant-card:hover {
+  transform: translate(-2px, -2px) !important;
+}
+.grant-card:active {
+  transform: translate(2px, 2px) !important;
+}
+
+/* ─── Stat Block Pop-in ──────────────────────────────────────────────────── */
+.stat-pop {
+  animation: statPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+.stat-pop-1 { animation-delay: 0.05s; }
+.stat-pop-2 { animation-delay: 0.12s; }
+.stat-pop-3 { animation-delay: 0.19s; }
+.stat-pop-4 { animation-delay: 0.26s; }
+
+/* ─── Floating Pixel ─────────────────────────────────────────────────────── */
+.float-pixel {
+  animation: floatPixel 3s ease-in-out infinite;
+}
+
+/* ─── Nav Icon Pop ───────────────────────────────────────────────────────── */
+.nav-icon-active {
+  animation: navIconPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── Button Neon Glow Variants ──────────────────────────────────────────── */
+.btn-glow-pink   { animation: pinkGlow   2.8s ease-in-out infinite; }
+.btn-glow-yellow { animation: yellowGlow 2.8s ease-in-out infinite; }
+.btn-glow-lime   { animation: limeGlow   2.8s ease-in-out infinite; }
+.btn-glow-cyan   { animation: cyanGlow   2.8s ease-in-out infinite; }
+
+/* Power-up press for ALL retro buttons */
+.btn-retro:active,
+.btn-retro-pink:active,
+.btn-retro-yellow:active,
+.btn-retro-lime:active,
+.btn-retro-white:active,
+.btn-retro-blue:active {
+  transform: scale(0.93) translate(2px, 2px) !important;
+}
+
+/* ─── Cursor Glow (desktop only) ─────────────────────────────────────────── */
+.cursor-glow {
+  position: fixed;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(255,30,120,0.35) 0%, transparent 70%);
+  mix-blend-mode: screen;
+  transition: opacity 0.25s ease;
+}
+@media (hover: none) { .cursor-glow { display: none; } }
+
+/* ─── Progress Bar Animated Fill ─────────────────────────────────────────── */
+.bar-fill {
+  transition: width 0.85s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.bar-fill-start { width: 0% !important; min-width: 0 !important; }
+
+/* ─── Stagger delay helpers ──────────────────────────────────────────────── */
+.delay-100 { transition-delay: 0.1s; }
+.delay-200 { transition-delay: 0.2s; }
+.delay-300 { transition-delay: 0.3s; }
+.delay-400 { transition-delay: 0.4s; }
+.delay-500 { transition-delay: 0.5s; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   NEON TYPOGRAPHY + ARCADE ICONOGRAPHY LAYER
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Neon text-shadow keyframes ─────────────────────────────────────────── */
+@keyframes neonPulsePink {
+  0%, 100% { text-shadow: 0 0 4px #ff1e78, 0 0 12px #ff1e78, 0 0 24px rgba(255,30,120,0.5); }
+  50%       { text-shadow: 0 0 2px #ff1e78, 0 0 6px #ff1e78, 0 0 14px rgba(255,30,120,0.3); }
+}
+@keyframes neonPulseYellow {
+  0%, 100% { text-shadow: 0 0 4px #ffe100, 0 0 12px #ffe100, 0 0 24px rgba(255,225,0,0.5); }
+  50%       { text-shadow: 0 0 2px #ffe100, 0 0 6px #ffe100, 0 0 14px rgba(255,225,0,0.3); }
+}
+@keyframes neonPulseLime {
+  0%, 100% { text-shadow: 0 0 4px #00d94e, 0 0 12px #00d94e, 0 0 24px rgba(0,217,78,0.5); }
+  50%       { text-shadow: 0 0 2px #00d94e, 0 0 6px #00d94e, 0 0 14px rgba(0,217,78,0.3); }
+}
+@keyframes neonPulseCyan {
+  0%, 100% { text-shadow: 0 0 4px #00d4ff, 0 0 12px #00d4ff, 0 0 24px rgba(0,212,255,0.5); }
+  50%       { text-shadow: 0 0 2px #00d4ff, 0 0 6px #00d4ff, 0 0 14px rgba(0,212,255,0.3); }
+}
+@keyframes neonPulsePurple {
+  0%, 100% { text-shadow: 0 0 4px #7c3aed, 0 0 12px #7c3aed, 0 0 24px rgba(124,58,237,0.5); }
+  50%       { text-shadow: 0 0 2px #7c3aed, 0 0 6px #7c3aed, 0 0 14px rgba(124,58,237,0.3); }
+}
+@keyframes neonPulseOrange {
+  0%, 100% { text-shadow: 0 0 4px #ff6b00, 0 0 12px #ff6b00, 0 0 24px rgba(255,107,0,0.5); }
+  50%       { text-shadow: 0 0 2px #ff6b00, 0 0 6px #ff6b00, 0 0 14px rgba(255,107,0,0.3); }
+}
+@keyframes neonPulseBlue {
+  0%, 100% { text-shadow: 0 0 4px #0066cc, 0 0 12px #0066cc, 0 0 24px rgba(0,102,204,0.5); }
+  50%       { text-shadow: 0 0 2px #0066cc, 0 0 6px #0066cc, 0 0 14px rgba(0,102,204,0.3); }
+}
+@keyframes neonFlicker {
+  0%, 19%, 21%, 23%, 55%, 57%, 100% { opacity: 1; }
+  20%, 22%                           { opacity: 0.4; }
+  56%                                { opacity: 0.6; }
+}
+@keyframes btnFlash {
+  0%   { opacity: 0; }
+  10%  { opacity: 0.5; }
+  100% { opacity: 0; }
+}
+@keyframes iconPop {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.35); }
+  60%  { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+@keyframes iconGlowPulse {
+  0%, 100% { filter: drop-shadow(0 0 2px currentColor) drop-shadow(0 0 6px currentColor); }
+  50%       { filter: drop-shadow(0 0 4px currentColor) drop-shadow(0 0 12px currentColor); }
+}
+
+/* ─── Neon text classes ──────────────────────────────────────────────────── */
+.neon-pink   { color: #ff1e78; animation: neonPulsePink   2.4s ease-in-out infinite; }
+.neon-yellow { color: #ffe100; animation: neonPulseYellow 2.4s ease-in-out infinite; }
+.neon-lime   { color: #00d94e; animation: neonPulseLime   2.4s ease-in-out infinite; }
+.neon-cyan   { color: #00d4ff; animation: neonPulseCyan   2.4s ease-in-out infinite; }
+.neon-purple { color: #7c3aed; animation: neonPulsePurple 2.4s ease-in-out infinite; }
+.neon-orange { color: #ff6b00; animation: neonPulseOrange 2.4s ease-in-out infinite; }
+.neon-blue   { color: #0066cc; animation: neonPulseBlue   2.4s ease-in-out infinite; }
+
+/* ─── Flicker variant ────────────────────────────────────────────────────── */
+.neon-flicker { animation: neonFlicker 4s linear infinite; }
+
+/* ─── Arcade icon frame (glowing container) ─────────────────────────────── */
+.arcade-icon-frame {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 2px solid #0a0a1a;
+  animation: iconPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+.arcade-icon-frame:hover {
+  animation: iconGlowPulse 1.6s ease-in-out infinite;
+}
+
+/* ─── Button flash-on-press effect ──────────────────────────────────────── */
+.btn-retro:active::after,
+.btn-retro-pink:active::after,
+.btn-retro-yellow:active::after,
+.btn-retro-lime:active::after,
+.btn-retro-white:active::after,
+.btn-retro-blue:active::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: inherit;
+  pointer-events: none;
+  animation: btnFlash 0.3s ease-out forwards;
+}
+.btn-retro { position: relative; overflow: hidden; }
+.btn-retro-pink, .btn-retro-yellow, .btn-retro-lime,
+.btn-retro-white, .btn-retro-blue { position: relative; overflow: hidden; }
+
+/* ─── Active nav label neon pulses ───────────────────────────────────────── */
+.nav-neon-pink   { animation: neonPulsePink   1.8s ease-in-out infinite; color: #ff1e78; }
+.nav-neon-blue   { animation: neonPulseBlue   1.8s ease-in-out infinite; color: #0066cc; }
+.nav-neon-yellow { animation: neonPulseYellow 1.8s ease-in-out infinite; color: #b89000; }
+.nav-neon-purple { animation: neonPulsePurple 1.8s ease-in-out infinite; color: #7c3aed; }
+.nav-neon-lime   { animation: neonPulseLime   1.8s ease-in-out infinite; color: #00a83a; }
+.nav-neon-orange { animation: neonPulseOrange 1.8s ease-in-out infinite; color: #ff6b00; }

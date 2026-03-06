@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import PixelIcon from "@/components/shared/PixelIcon";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -12,6 +13,8 @@ interface WritingPlan {
   materials: string[];
   estimatedHours: number;
   winTips: string[];
+  approved?: boolean;
+  draft?: string;
 }
 
 interface Props {
@@ -276,15 +279,31 @@ function EditableThemes({
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function WritingPlanPanel({ opportunityId, rawPlan, grantName }: Props) {
+  const router = useRouter();
   const [plan, setPlan]       = useState<WritingPlan | null>(() => {
     if (!rawPlan) return null;
     try { return JSON.parse(rawPlan) as WritingPlan; } catch { return null; }
   });
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState<string | null>(null);
+  const [loading, setLoading]     = useState(false);
+  const [error, setError]         = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Draft state
+  const [draft,      setDraft]      = useState<string>(() => {
+    if (!rawPlan) return "";
+    try { return (JSON.parse(rawPlan) as WritingPlan).draft ?? ""; } catch { return ""; }
+  });
+  const [approved,   setApproved]   = useState<boolean>(() => {
+    if (!rawPlan) return false;
+    try { return !!(JSON.parse(rawPlan) as WritingPlan).approved; } catch { return false; }
+  });
+  const [draftState, setDraftState] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [draftError, setDraftError] = useState<string>("");
+  const [editDraft,  setEditDraft]  = useState(false);
+  const [copied,     setCopied]     = useState(false);
+
+  const saveTimer    = useRef<ReturnType<typeof setTimeout> | null>(null);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Save to Airtable ────────────────────────────────────────────────────────
@@ -342,6 +361,70 @@ export default function WritingPlanPanel({ opportunityId, rawPlan, grantName }: 
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
+    }
+  }
+
+  // ── Approve plan + trigger draft ────────────────────────────────────────────
+
+  async function approvePlan() {
+    if (!plan || draftState === "loading") return;
+    setApproved(true);
+    setDraftState("loading");
+    setDraftError("");
+    try {
+      const res  = await fetch(`/api/opportunities/${opportunityId}/draft`, { method: "POST" });
+      const data = await res.json() as { draft?: string; error?: string };
+      if (!res.ok || data.error) {
+        setDraftError(data.error ?? "Draft generation failed");
+        setDraftState("error");
+        setApproved(false);
+        return;
+      }
+      setDraft(data.draft ?? "");
+      setDraftState("done");
+      // Update local plan state so approved flag persists across re-renders
+      setPlan(prev => prev ? { ...prev, approved: true, draft: data.draft } : prev);
+    } catch {
+      setDraftError("Network error — try again");
+      setDraftState("error");
+      setApproved(false);
+    }
+  }
+
+  async function saveDraftEdit(text: string) {
+    if (!plan) return;
+    const updated = { ...plan, draft: text, approved: true };
+    setPlan(updated);
+    await fetch(`/api/opportunities/${opportunityId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fields: { "Writing Plan": JSON.stringify(updated) } }),
+    });
+  }
+
+  function copyDraft() {
+    navigator.clipboard.writeText(draft).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  // ── Send draft to Kika Keith for review ─────────────────────────────────────
+  const [reviewState, setReviewState] = useState<"idle" | "saving" | "done">("idle");
+
+  async function sendToReview() {
+    if (reviewState !== "idle") return;
+    setReviewState("saving");
+    try {
+      await fetch(`/api/opportunities/${opportunityId}`, {
+        method:  "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ fields: { Status: "Active" } }),
+      });
+      setReviewState("done");
+      setTimeout(() => router.refresh(), 1200);
+    } catch {
+      setReviewState("idle");
     }
   }
 
@@ -419,16 +502,22 @@ export default function WritingPlanPanel({ opportunityId, rawPlan, grantName }: 
 
       {/* Header row */}
       <div className="flex items-center justify-between px-4 py-3 border-b-[2.5px] border-[#0a0a1a]"
-        style={{ background: "#fff3a0" }}>
+        style={{ background: approved ? "#b8ffda" : "#fff3a0" }}>
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg border-[2px] border-[#0a0a1a] flex items-center justify-center"
-            style={{ background: "#ff6b00", boxShadow: "2px 2px 0 #0a0a1a" }}>
-            <PixelIcon name="lightning" size={13} color="white" />
+            style={{ background: approved ? "#00a83a" : "#ff6b00", boxShadow: "2px 2px 0 #0a0a1a" }}>
+            <PixelIcon name={approved ? "check" : "lightning"} size={13} color="white" />
           </div>
           <span className="text-[11px] font-black uppercase tracking-widest text-[#0a0a1a]"
             style={{ fontFamily: "Orbitron, sans-serif" }}>
-            AI WRITING PLAN
+            {approved ? "PLAN APPROVED" : "AI WRITING PLAN"}
           </span>
+          {approved && (
+            <span className="text-[8px] font-black px-2 py-0.5 rounded-md border-[1.5px] border-[#00a83a] text-[#00a83a]"
+              style={{ fontFamily: "Orbitron, sans-serif", background: "#e8fff2" }}>
+              DRAFT IN PROGRESS
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -440,29 +529,45 @@ export default function WritingPlanPanel({ opportunityId, rawPlan, grantName }: 
             </span>
           )}
 
-          {/* Edit toggle */}
-          <button
-            onClick={() => setIsEditing(e => !e)}
-            className="text-[8px] font-black px-2.5 py-1 rounded-lg border-[1.5px] border-[#0a0a1a] transition-all active:translate-y-[1px] active:shadow-none"
-            style={{
-              fontFamily: "Orbitron, sans-serif",
-              background: isEditing ? "#0a0a1a" : "#ffffff",
-              color: isEditing ? "#ffe100" : "#7c3aed",
-              boxShadow: isEditing ? "none" : "2px 2px 0 #7c3aed",
-            }}
-          >
-            {isEditing ? "✓ DONE" : "✏ EDIT"}
-          </button>
+          {/* Edit toggle — hidden when approved */}
+          {!approved && (
+            <button
+              onClick={() => setIsEditing(e => !e)}
+              className="text-[8px] font-black px-2.5 py-1 rounded-lg border-[1.5px] border-[#0a0a1a] transition-all active:translate-y-[1px] active:shadow-none"
+              style={{
+                fontFamily: "Orbitron, sans-serif",
+                background: isEditing ? "#0a0a1a" : "#ffffff",
+                color: isEditing ? "#ffe100" : "#7c3aed",
+                boxShadow: isEditing ? "none" : "2px 2px 0 #7c3aed",
+              }}
+            >
+              {isEditing ? "✓ DONE" : "✏ EDIT"}
+            </button>
+          )}
 
-          {/* Regenerate */}
-          <button
-            onClick={generatePlan}
-            className="text-[8px] font-black px-2.5 py-1 rounded-lg border-[1.5px] border-[#0a0a1a] transition-all active:translate-y-[1px] active:shadow-none"
-            style={{ fontFamily: "Orbitron, sans-serif", background: "#ffffff", color: "#ff6b00", boxShadow: "2px 2px 0 #ff6b00" }}
-            title="Regenerate plan from Claude"
-          >
-            ↺ REDO
-          </button>
+          {/* Regenerate — hidden when approved */}
+          {!approved && (
+            <button
+              onClick={generatePlan}
+              className="text-[8px] font-black px-2.5 py-1 rounded-lg border-[1.5px] border-[#0a0a1a] transition-all active:translate-y-[1px] active:shadow-none"
+              style={{ fontFamily: "Orbitron, sans-serif", background: "#ffffff", color: "#ff6b00", boxShadow: "2px 2px 0 #ff6b00" }}
+              title="Regenerate plan from Claude"
+            >
+              ↺ REDO
+            </button>
+          )}
+
+          {/* APPROVE — shown when plan exists and not yet approved */}
+          {!approved && (
+            <button
+              onClick={approvePlan}
+              className="flex items-center gap-1.5 text-[8px] font-black px-3 py-1.5 rounded-lg border-[2px] border-[#0a0a1a] transition-all active:translate-y-[1px] active:shadow-none"
+              style={{ fontFamily: "Orbitron, sans-serif", background: "#00d94e", color: "#0a0a1a", boxShadow: "2px 2px 0 #0a0a1a" }}
+            >
+              <PixelIcon name="check" size={9} color="#0a0a1a" />
+              APPROVE + WRITE DRAFT
+            </button>
+          )}
         </div>
       </div>
 
@@ -577,7 +682,179 @@ export default function WritingPlanPanel({ opportunityId, rawPlan, grantName }: 
           isEditing={isEditing}
         />
 
+        {/* ── Approve CTA (inline, below plan) ── */}
+        {!approved && (
+          <button
+            onClick={approvePlan}
+            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl border-[2.5px] border-[#0a0a1a] font-black transition-all active:translate-y-[2px] active:shadow-none"
+            style={{ fontFamily: "Orbitron, sans-serif", fontSize: "11px", background: "#00d94e", boxShadow: "4px 4px 0 #0a0a1a" }}
+          >
+            <PixelIcon name="check" size={14} color="#0a0a1a" />
+            APPROVE PLAN — START WRITING DRAFT
+          </button>
+        )}
+
       </div>
+
+      {/* ── Draft writing state ───────────────────────────────────────────── */}
+
+      {/* Draft loading */}
+      {draftState === "loading" && (
+        <div className="border-t-[2.5px] border-[#0a0a1a] px-4 py-6 text-center"
+          style={{ background: "#fffde8" }}>
+          <div className="flex justify-center gap-1.5 mb-3">
+            {["#00d94e","#0066cc","#7c3aed","#ff6b00","#ff1e78"].map((c, i) => (
+              <div key={i} className="w-3 h-3 rounded-sm border-[1.5px] border-[#0a0a1a] animate-bounce"
+                style={{ background: c, animationDelay: `${i * 0.1}s` }} />
+            ))}
+          </div>
+          <p className="text-[11px] font-black text-[#0a0a1a] mb-1"
+            style={{ fontFamily: "Orbitron, sans-serif" }}>
+            CLAUDE IS WRITING THE DRAFT…
+          </p>
+          <p className="text-[9px] text-[#555566]">
+            Writing each section from the approved plan — this takes ~30–60 seconds
+          </p>
+        </div>
+      )}
+
+      {/* Draft error */}
+      {draftState === "error" && draftError && (
+        <div className="border-t-[2.5px] border-[#ff1e78] px-4 py-3 flex items-start gap-3"
+          style={{ background: "#ffe0e8" }}>
+          <PixelIcon name="alert" size={16} color="#ff1e78" />
+          <div className="flex-1">
+            <p className="text-[10px] font-black text-[#ff1e78]" style={{ fontFamily: "Orbitron, sans-serif" }}>
+              DRAFT FAILED
+            </p>
+            <p className="text-xs text-[#cc0044]">{draftError}</p>
+          </div>
+          <button
+            onClick={approvePlan}
+            className="text-[8px] font-black px-2.5 py-1 rounded-lg border-[1.5px] border-[#0a0a1a]"
+            style={{ fontFamily: "Orbitron, sans-serif", background: "#ffffff", color: "#ff1e78" }}
+          >
+            RETRY
+          </button>
+        </div>
+      )}
+
+      {/* Draft display */}
+      {draftState !== "loading" && draft && (
+        <div className="border-t-[2.5px] border-[#0a0a1a]">
+          {/* Draft header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b-[2px] border-[#0a0a1a]"
+            style={{ background: "#e8d4ff" }}>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg border-[2px] border-[#0a0a1a] flex items-center justify-center"
+                style={{ background: "#7c3aed", boxShadow: "2px 2px 0 #0a0a1a" }}>
+                <PixelIcon name="quill" size={13} color="white" />
+              </div>
+              <span className="text-[11px] font-black uppercase tracking-widest text-[#7c3aed]"
+                style={{ fontFamily: "Orbitron, sans-serif" }}>
+                GRANT DRAFT
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={copyDraft}
+                className="flex items-center gap-1.5 text-[8px] font-black px-2.5 py-1 rounded-lg border-[1.5px] border-[#0a0a1a] transition-all active:translate-y-[1px]"
+                style={{ fontFamily: "Orbitron, sans-serif", background: copied ? "#b8ffda" : "#ffffff", color: copied ? "#00a83a" : "#0a0a1a", boxShadow: "1px 1px 0 #0a0a1a" }}
+              >
+                <PixelIcon name={copied ? "check" : "arrow_right"} size={9} color={copied ? "#00a83a" : "#0a0a1a"} />
+                {copied ? "COPIED!" : "COPY"}
+              </button>
+              <button
+                onClick={() => setEditDraft(e => !e)}
+                className="text-[8px] font-black px-2.5 py-1 rounded-lg border-[1.5px] border-[#0a0a1a] transition-all active:translate-y-[1px]"
+                style={{ fontFamily: "Orbitron, sans-serif", background: editDraft ? "#0a0a1a" : "#ffffff", color: editDraft ? "#ffe100" : "#7c3aed", boxShadow: editDraft ? "none" : "1px 1px 0 #7c3aed" }}
+              >
+                {editDraft ? "✓ DONE" : "✏ EDIT"}
+              </button>
+            </div>
+          </div>
+
+          {/* Draft content */}
+          <div className="px-4 py-4" style={{ background: "#fefcf5" }}>
+            {editDraft ? (
+              <textarea
+                value={draft}
+                onChange={e => setDraft(e.target.value)}
+                onBlur={e => saveDraftEdit(e.target.value)}
+                rows={20}
+                className="w-full rounded-xl border-[2px] border-[#7c3aed] px-4 py-3 text-sm leading-relaxed focus:outline-none resize-none"
+                style={{ fontFamily: "Inter, sans-serif", background: "#ffffff", boxShadow: "2px 2px 0 #7c3aed" }}
+              />
+            ) : (
+              <div className="text-sm text-[#0a0a1a] leading-relaxed whitespace-pre-wrap"
+                style={{ fontFamily: "Inter, sans-serif" }}>
+                {draft.split(/\*\*(.+?)\*\*/).map((part, i) =>
+                  i % 2 === 1
+                    ? <strong key={i} className="font-black text-[#7c3aed]">{part}</strong>
+                    : <span key={i}>{part}</span>
+                )}
+              </div>
+            )}
+            <p className="text-[8px] font-bold text-[#aaaacc] mt-3 text-right"
+              style={{ fontFamily: "Orbitron, sans-serif" }}>
+              CLAUDE DRAFT · {grantName} · REVIEW BEFORE SUBMISSION
+            </p>
+          </div>
+
+          {/* ── What's next ─────────────────────────────────────────── */}
+          <div className="border-t-[2px] border-dashed border-[#0a0a1a]/20 px-4 py-4 space-y-3"
+            style={{ background: "#f8f4ff" }}>
+            <p className="text-[9px] font-black uppercase tracking-widest text-[#7c3aed]"
+              style={{ fontFamily: "Orbitron, sans-serif" }}>
+              NEXT STEPS
+            </p>
+            {[
+              { num: "01", text: "Read the full draft above — refine any section using the EDIT button.", icon: "quill",    color: "#7c3aed" },
+              { num: "02", text: "Check the SUBMISSION PACKAGE below — gather every required document.",  icon: "filter",   color: "#ff6b00" },
+              { num: "03", text: "Send to Kika Keith for final D-3 review — use the button below.",       icon: "rocket",   color: "#ff1e78" },
+              { num: "04", text: "Once approved, assemble the full package and submit via the portal.",   icon: "check",    color: "#00a83a" },
+            ].map(step => (
+              <div key={step.num} className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-lg border-[2px] border-[#0a0a1a] flex items-center justify-center shrink-0 mt-0.5"
+                  style={{ background: step.color, boxShadow: "1px 1px 0 #0a0a1a" }}>
+                  <PixelIcon name={step.icon as any} size={11} color="white" />
+                </div>
+                <div>
+                  <span className="text-[8px] font-black mr-1.5" style={{ fontFamily: "Orbitron, sans-serif", color: step.color }}>{step.num}</span>
+                  <span className="text-sm text-[#333344]">{step.text}</span>
+                </div>
+              </div>
+            ))}
+
+            {/* SEND TO REVIEW CTA */}
+            <button
+              onClick={sendToReview}
+              disabled={reviewState !== "idle"}
+              className="w-full mt-2 flex items-center justify-center gap-2 py-4 rounded-xl border-[2.5px] border-[#0a0a1a] font-black transition-all active:translate-y-[2px] active:shadow-none disabled:opacity-60"
+              style={{
+                fontFamily: "Orbitron, sans-serif",
+                fontSize: "11px",
+                background: reviewState === "done" ? "#b8ffda" : "#ff1e78",
+                color:      reviewState === "done" ? "#00a83a"  : "white",
+                boxShadow:  reviewState === "done" ? "4px 4px 0 #00a83a" : "4px 4px 0 #0a0a1a",
+              }}
+            >
+              <PixelIcon
+                name={reviewState === "done" ? "check" : "rocket"}
+                size={14}
+                color={reviewState === "done" ? "#00a83a" : "white"}
+              />
+              {reviewState === "done" ? "SENT TO REVIEW — PAGE UPDATING…"
+               : reviewState === "saving" ? "SENDING…"
+               : "SEND DRAFT TO KIKA KEITH FOR REVIEW"}
+            </button>
+            <p className="text-[8px] text-center text-[#aaaacc]" style={{ fontFamily: "Orbitron, sans-serif" }}>
+              This moves the grant into IN REVIEW status + alerts Kika Keith
+            </p>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

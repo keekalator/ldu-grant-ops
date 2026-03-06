@@ -1,29 +1,32 @@
 /**
  * POST /api/opportunities/[id]/enrich
  *
- * Claude agent that researches a grant and auto-fills:
- *   - Description       — what the grant funds and its purpose
- *   - Eligibility Notes — what LDU needs to meet + whether it qualifies
- *   - Why We Qualify    — LDU-specific qualification narrative
- *   - Funder            — confirmed funder name
+ * Fully automated grant research agent. Steps:
+ *   1. Fetch the Airtable record
+ *   2. Spider the funder's actual website — fetches the homepage, discovers
+ *      the grant sub-page, and returns clean text from both
+ *   3. Feed the live page content + grant metadata to Claude
+ *   4. Claude extracts: Description, Eligibility Notes, Why We Qualify,
+ *      Funder Name, Funder Website URL
+ *   5. Save all fields back to Airtable
  *
- * All fields are saved to Airtable and returned in the response.
- * The team can edit any field inline after generation.
+ * No manual input required from the team.
  */
 
-import { NextRequest, NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { NextRequest, NextResponse }  from "next/server";
+import { revalidatePath }             from "next/cache";
+import { fetchBestGrantPage }         from "@/lib/fetchGrantPage";
 
-const ANTHROPIC_KEY   = process.env.ANTHROPIC_API_KEY?.trim();
-const AIRTABLE_TOKEN  = process.env.AIRTABLE_API_TOKEN?.trim();
-const AIRTABLE_BASE   = process.env.AIRTABLE_BASE_ID?.trim();
-const TABLE           = "Opportunities";
+const ANTHROPIC_KEY  = process.env.ANTHROPIC_API_KEY?.trim();
+const AIRTABLE_TOKEN = process.env.AIRTABLE_API_TOKEN?.trim();
+const AIRTABLE_BASE  = process.env.AIRTABLE_BASE_ID?.trim();
+const TABLE          = "Opportunities";
 
 async function airtableFetch(path: string, opts?: RequestInit) {
   const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE}/${path}`, {
     ...opts,
     headers: {
-      Authorization: `Bearer ${AIRTABLE_TOKEN}`,
+      Authorization:  `Bearer ${AIRTABLE_TOKEN}`,
       "Content-Type": "application/json",
       ...(opts?.headers ?? {}),
     },
@@ -33,7 +36,7 @@ async function airtableFetch(path: string, opts?: RequestInit) {
   return res.json();
 }
 
-// ─── LDU context block injected into every prompt ────────────────────────────
+// ─── LDU context ─────────────────────────────────────────────────────────────
 
 const LDU_CONTEXT = `
 ABOUT LDU (Life Development University):
@@ -49,40 +52,63 @@ ABOUT LDU (Life Development University):
 - Key narrative: "Culture as Cultivation" — growing food, people, and community as one act
 `.trim();
 
-// ─── Build Claude prompt ──────────────────────────────────────────────────────
+// ─── Prompt builder ───────────────────────────────────────────────────────────
 
-function buildPrompt(fields: Record<string, unknown>): string {
-  const name    = fields["Grant Name"]   ?? "Unknown";
-  const funder  = fields["Funder"]       ?? fields["Funder Name"] ?? "Unknown";
-  const notes   = fields["Notes"]        ?? "";
-  const pillars = (fields["Pillar"] as string[] | undefined)?.join(", ") ?? "";
-  const amount  = fields["Award Amount Range"] ?? "";
-  const deadline = fields["Deadline"]    ?? "";
+function buildPrompt(
+  fields: Record<string, unknown>,
+  pageText: string | null,
+  pageUrl: string | null,
+): string {
+  const name     = fields["Grant Name"]         ?? "Unknown";
+  const funder   = fields["Funder Name"] ?? fields["Funder"] ?? "Unknown";
+  const notes    = fields["Notes"]               ?? "";
+  const pillars  = (fields["Pillar"] as string[] | undefined)?.join(", ") ?? "";
+  const amount   = fields["Award Amount Range"]  ?? "";
+  const deadline = fields["Deadline"]            ?? "";
+  const source   = fields["Source"]              ?? "";
+
+  const liveSection = pageText
+    ? `
+LIVE CONTENT FETCHED FROM FUNDER'S WEBSITE (${pageUrl ?? "unknown URL"}):
+─────────────────────────────────────────
+${pageText}
+─────────────────────────────────────────
+Use the content above as the PRIMARY source for eligibility, requirements, and deadlines.
+`
+    : `
+NOTE: The funder's website could not be fetched automatically. Use your training knowledge
+about this funder to fill in as much as possible, and flag "Verify on funder's website"
+for any field you are not certain about.
+`;
 
   return `
-You are a grant researcher for Life Development University (LDU). Research this grant and return a JSON object.
+You are a grant researcher for Life Development University (LDU).
+Your job is to read the live grant page content below and extract key information.
 
 ${LDU_CONTEXT}
 
-GRANT TO RESEARCH:
+GRANT RECORD:
 - Name: ${name}
 - Funder: ${funder}
-- Pillars: ${pillars}
+- Pillars: ${pillars || "multiple"}
 - Award Amount: ${amount ? `$${amount}` : "unknown"}
 - Deadline: ${deadline || "unknown"}
-- Existing Notes: ${String(notes).slice(0, 600) || "none"}
+- Source URL: ${source || "none"}
+- Existing Notes: ${String(notes).slice(0, 400) || "none"}
+${liveSection}
 
-Return ONLY valid JSON (no markdown fences) with exactly these keys:
+Return ONLY valid JSON (no markdown fences, no explanation) with exactly these keys:
 
 {
-  "description": "2–3 sentence description of what this grant funds, who the funder is, and what they prioritize. Be specific.",
-  "eligibilityNotes": "Bullet list of key eligibility requirements (501c3 status, geography, org size, program focus). Start each bullet with '• '. Flag any requirements LDU might not meet.",
-  "whyWeQualify": "2–3 sentences explaining specifically why LDU qualifies for this grant — reference our programs, demographics, geography, and mission alignment.",
-  "funder": "The official funder organization name (confirm or correct if needed)"
+  "description": "2–3 sentences describing what this grant funds, who the funder is, and their stated priorities. Draw directly from the page content above if available.",
+  "eligibilityNotes": "Bullet list of EVERY eligibility requirement found on the page. Start each bullet with '• '. Include: 501c3 status, geographic limits, org size/revenue limits, program focus requirements, exclusions. Flag any requirements LDU might not meet with '⚠️'.",
+  "whyWeQualify": "2–3 sentences explaining specifically why LDU qualifies. Reference our programs, demographics, geography, and mission. Be honest about any gaps.",
+  "funderName": "Official funder organization name exactly as it appears on the page",
+  "funderWebsite": "The direct URL to this specific grant's application page or guidelines (from the page content above). Use the most specific URL available.",
+  "verified": true or false — set true ONLY if the live page content above explicitly mentions this grant program by name OR your training data includes clear, specific knowledge of this grant's existence. Set false if you cannot confirm this grant program is real.",
+  "verificationNotes": "One sentence: what evidence confirms this grant exists (e.g. 'Found on lacounty.gov/grants page'), OR what is uncertain (e.g. 'Could not find this grant program by name on the fetched page — verify at funder website before investing writing time')."
 }
-
-Be factual and concise. If you don't know something, say "Research needed" rather than fabricating.
-  `.trim();
+`.trim();
 }
 
 // ─── Route handler ────────────────────────────────────────────────────────────
@@ -93,7 +119,11 @@ export async function POST(
 ) {
   const { id } = params;
 
-  // 1. Fetch existing record
+  if (!ANTHROPIC_KEY) {
+    return NextResponse.json({ error: "ANTHROPIC_API_KEY not set" }, { status: 500 });
+  }
+
+  // ── 1. Fetch the Airtable record ─────────────────────────────────────────
   let record: { id: string; fields: Record<string, unknown> };
   try {
     record = await airtableFetch(`${TABLE}/${id}`);
@@ -101,10 +131,25 @@ export async function POST(
     return NextResponse.json({ error: `Record not found: ${e}` }, { status: 404 });
   }
 
-  // 2. Call Claude
-  if (!ANTHROPIC_KEY) {
-    return NextResponse.json({ error: "ANTHROPIC_API_KEY not set" }, { status: 500 });
-  }
+  const fields = record.fields;
+
+  // ── 2. Fetch the actual funder website ───────────────────────────────────
+  // Run in parallel — don't let a slow/failing website block the whole route
+  const funderWebsiteRaw = fields["Funder Website"] as string | undefined;
+  const sourceUrlRaw     = fields["Source"]         as string | undefined;
+
+  const pageResult = await fetchBestGrantPage(funderWebsiteRaw, sourceUrlRaw);
+
+  console.log(
+    `[enrich] ${id} — web fetch: ${pageResult?.success ? `✓ ${pageResult.finalUrl} (${pageResult.text.length} chars)` : "failed, using training data"}`
+  );
+
+  // ── 3. Call Claude with live page content ────────────────────────────────
+  const prompt = buildPrompt(
+    fields,
+    pageResult?.text ?? null,
+    pageResult?.finalUrl ?? null,
+  );
 
   const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -115,8 +160,8 @@ export async function POST(
     },
     body: JSON.stringify({
       model:      "claude-sonnet-4-6",
-      max_tokens: 1200,
-      messages:   [{ role: "user", content: buildPrompt(record.fields) }],
+      max_tokens: 1600,
+      messages:   [{ role: "user", content: prompt }],
     }),
   });
 
@@ -129,30 +174,54 @@ export async function POST(
   let raw: string = claudeData.content?.[0]?.text ?? "";
   raw = raw.trim().replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "").trim();
 
-  let enriched: { description: string; eligibilityNotes: string; whyWeQualify: string; funder: string };
+  let enriched: {
+    description:       string;
+    eligibilityNotes:  string;
+    whyWeQualify:      string;
+    funderName:        string;
+    funderWebsite:     string;
+    verified:          boolean;
+    verificationNotes: string;
+  };
   try {
     enriched = JSON.parse(raw);
   } catch {
     return NextResponse.json(
-      { error: `Claude returned unparseable response. Raw: ${raw.slice(0, 200)}` },
+      { error: `Claude returned unparseable response. Raw: ${raw.slice(0, 300)}` },
       { status: 500 }
     );
   }
 
-  // 3. Save to Airtable
+  // ── 4. Save to Airtable ─────────────────────────────────────────────────
+  // Prefer the discovered grant sub-page URL over Claude's suggestion
+  const bestWebsiteUrl =
+    (pageResult?.discoveredGrantPage ? pageResult.finalUrl : null) ??
+    (enriched.funderWebsite?.startsWith("http") ? enriched.funderWebsite : null) ??
+    funderWebsiteRaw ??
+    null;
+
+  // Prepend a verification warning to eligibility notes when unverified
+  const verifiedFlag = enriched.verified !== false; // default true if Claude didn't return the field
+  const eligibilityWithFlag = !verifiedFlag
+    ? `⚠️ UNVERIFIED GRANT — ${enriched.verificationNotes}\n\n${enriched.eligibilityNotes}`
+    : enriched.eligibilityNotes;
+
   const patchFields: Record<string, unknown> = {
-    "Description":      enriched.description,
-    "Eligibility Notes": enriched.eligibilityNotes,
-    "Why We Qualify":   enriched.whyWeQualify,
+    "Description":       enriched.description,
+    "Eligibility Notes": eligibilityWithFlag,
+    "Why We Qualify":    enriched.whyWeQualify,
   };
-  if (enriched.funder && enriched.funder !== "Unknown") {
-    patchFields["Funder"] = enriched.funder;
+  if (enriched.funderName && enriched.funderName !== "Unknown") {
+    patchFields["Funder Name"] = enriched.funderName;
+  }
+  if (bestWebsiteUrl) {
+    patchFields["Funder Website"] = bestWebsiteUrl;
   }
 
   try {
     await airtableFetch(`${TABLE}/${id}`, {
       method: "PATCH",
-      body: JSON.stringify({ fields: patchFields }),
+      body:   JSON.stringify({ fields: patchFields }),
     });
   } catch (e) {
     console.error("[enrich] Airtable save failed:", e);
@@ -162,9 +231,14 @@ export async function POST(
   revalidatePath(`/opportunity/${id}`);
 
   return NextResponse.json({
-    description:      enriched.description,
-    eligibilityNotes: enriched.eligibilityNotes,
-    whyWeQualify:     enriched.whyWeQualify,
-    funder:           enriched.funder,
+    description:       enriched.description,
+    eligibilityNotes:  eligibilityWithFlag,
+    whyWeQualify:      enriched.whyWeQualify,
+    funderName:        enriched.funderName,
+    funderWebsite:     bestWebsiteUrl ?? enriched.funderWebsite,
+    verified:          verifiedFlag,
+    verificationNotes: enriched.verificationNotes ?? "",
+    sourceFetched:     pageResult?.success ?? false,
+    sourceUrl:         pageResult?.finalUrl ?? null,
   });
 }

@@ -7,6 +7,9 @@ import UrgentAlerts from "@/components/dashboard/UrgentAlerts";
 import PipelineSnapshot from "@/components/dashboard/PipelineSnapshot";
 import GrantCard from "@/components/shared/GrantCard";
 import PixelIcon from "@/components/shared/PixelIcon";
+import AnimatedCounter from "@/components/shared/AnimatedCounter";
+import ScrollReveal from "@/components/shared/ScrollReveal";
+import HeroBg from "@/components/shared/HeroBg";
 import { formatCurrency, computePipelineStats } from "@/lib/utils";
 import { getOpportunities } from "@/lib/airtable";
 import type { PixelIconName } from "@/components/shared/PixelIcon";
@@ -25,10 +28,10 @@ async function getDashboardStats(): Promise<PipelineStats | null> {
 // ─── Stat Block ───────────────────────────────────────────────────────────────
 
 function StatBlock({
-  icon, label, value, sub, bg, shadowColor, iconColor = "#0a0a1a", href,
+  icon, label, value, sub, bg, shadowColor, iconColor = "#0a0a1a", neonColor, href,
 }: {
   icon: PixelIconName; label: string; value: string | number; sub?: string;
-  bg: string; shadowColor: string; iconColor?: string; href?: string;
+  bg: string; shadowColor: string; iconColor?: string; neonColor?: string; href?: string;
 }) {
   const inner = (
     <div
@@ -40,7 +43,7 @@ function StatBlock({
           className="w-8 h-8 rounded-lg border-[2px] border-[#0a0a1a] flex items-center justify-center"
           style={{ background: "rgba(255,255,255,0.5)" }}
         >
-          <PixelIcon name={icon} size={16} color={iconColor} />
+          <PixelIcon name={icon} size={16} color={iconColor} glow />
         </div>
         <span
           className="text-[9px] font-black uppercase tracking-widest"
@@ -50,10 +53,18 @@ function StatBlock({
         </span>
       </div>
       <p
-        className="text-3xl font-black text-[#0a0a1a] leading-none"
-        style={{ fontFamily: "Orbitron, sans-serif" }}
+        className="text-2xl font-black leading-none"
+        style={{
+          fontFamily: "'Press Start 2P', monospace",
+          color: neonColor ?? "#0a0a1a",
+          textShadow: neonColor
+            ? `0 0 6px ${neonColor}, 0 0 14px ${neonColor}80`
+            : undefined,
+        }}
       >
-        {value}
+        {typeof value === "number" ? (
+          <AnimatedCounter value={value} duration={1000} />
+        ) : value}
       </p>
       {sub && <p className="text-[11px] text-[#0a0a1a] opacity-60 font-medium">{sub}</p>}
     </div>
@@ -65,9 +76,9 @@ function StatBlock({
 // ─── Section Header ───────────────────────────────────────────────────────────
 
 function SectionHeader({
-  icon, label, iconBg, labelColor = "#0a0a1a", href, count,
+  icon, label, iconBg, labelColor = "#0a0a1a", neonColor, href, count,
 }: {
-  icon: PixelIconName; label: string; iconBg: string; labelColor?: string; href?: string; count?: number;
+  icon: PixelIconName; label: string; iconBg: string; labelColor?: string; neonColor?: string; href?: string; count?: number;
 }) {
   return (
     <div className="flex items-center justify-between mb-3">
@@ -76,11 +87,15 @@ function SectionHeader({
           className="w-7 h-7 rounded-lg border-[2px] border-[#0a0a1a] flex items-center justify-center"
           style={{ background: iconBg, boxShadow: "2px 2px 0 #0a0a1a" }}
         >
-          <PixelIcon name={icon} size={13} color="#0a0a1a" />
+          <PixelIcon name={icon} size={13} color={neonColor ?? "#0a0a1a"} glow={!!neonColor} />
         </div>
         <span
           className="text-[11px] font-black uppercase tracking-widest"
-          style={{ fontFamily: "Orbitron, sans-serif", color: labelColor }}
+          style={{
+            fontFamily: "Orbitron, sans-serif",
+            color: labelColor,
+            textShadow: neonColor ? `0 0 5px ${neonColor}90, 0 0 12px ${neonColor}50` : undefined,
+          }}
         >
           {label}
         </span>
@@ -144,21 +159,123 @@ async function DashboardContent() {
 
   if (!stats) {
     return (
-      <div className="page-container">
-        <div className="retro-card-pink p-6 text-center">
-          <PixelIcon name="alert" size={32} color="#ff1e78" className="mx-auto mb-3" />
-          <p className="font-black text-[#ff1e78]" style={{ fontFamily: "Orbitron, sans-serif" }}>CONNECTION FAILED</p>
-          <p className="text-xs text-[#0a0a1a] opacity-60 mt-1">
-            Add AIRTABLE_API_TOKEN & AIRTABLE_BASE_ID in Vercel → Settings → Environment Variables
-          </p>
-          <Link
-            href="/api/health"
-            className="inline-block mt-3 text-[10px] font-bold px-3 py-2 rounded-lg border-[2px] border-[#ff1e78] text-[#ff1e78]"
+      <div className="page-container space-y-4">
+
+        {/* ── Error hero ──────────────────────────────────── */}
+        <div
+          className="rounded-2xl border-[2.5px] border-[#ff1e78] p-5 text-center scanlines"
+          style={{ background: "#ffe0e8", boxShadow: "5px 5px 0 #ff1e78" }}
+        >
+          <PixelIcon name="alert" size={36} color="#ff1e78" className="mx-auto mb-3" glow />
+          <p
+            className="font-black text-[#ff1e78] text-lg mb-1 glitch-text"
             style={{ fontFamily: "Orbitron, sans-serif" }}
           >
-            Check /api/health for error details →
-          </Link>
+            NO DATA CONNECTION
+          </p>
+          <p className="text-xs text-[#0a0a1a] opacity-70 mb-4 leading-relaxed">
+            The app is running but can&apos;t reach Airtable. Follow the steps below to connect your database.
+          </p>
+
+          {/* Retry button */}
+          <form action="/" method="GET">
+            <button
+              type="submit"
+              className="btn-retro-pink mx-auto flex items-center gap-2 btn-glow-pink"
+            >
+              <PixelIcon name="refresh" size={12} color="white" />
+              RETRY CONNECTION
+            </button>
+          </form>
         </div>
+
+        {/* ── Setup steps ─────────────────────────────────── */}
+        <div className="rounded-2xl border-[2.5px] border-[#0a0a1a] overflow-hidden" style={{ boxShadow: "4px 4px 0 #0a0a1a" }}>
+          <div className="px-4 py-3 flex items-center gap-2" style={{ background: "#e8d4ff", borderBottom: "2.5px solid #0a0a1a" }}>
+            <PixelIcon name="lightning" size={13} color="#7c3aed" glow />
+            <span className="text-[10px] font-black uppercase tracking-widest text-[#7c3aed]" style={{ fontFamily: "Orbitron, sans-serif" }}>
+              HOW TO FIX THIS
+            </span>
+          </div>
+
+          <div className="divide-y-[1.5px] divide-dashed divide-[#0a0a1a]/10" style={{ background: "#fffbf0" }}>
+            {[
+              {
+                num: "01", icon: "quill" as const, color: "#7c3aed",
+                title: "Create .env.local",
+                body: "In the frontend/ folder, create a file named .env.local",
+                code: "AIRTABLE_API_TOKEN=pat...\nAIRTABLE_BASE_ID=app...",
+              },
+              {
+                num: "02", icon: "target" as const, color: "#0066cc",
+                title: "Get your Airtable token",
+                body: "Go to airtable.com/create/tokens → Create token → add data.records:read scope → select your LDU base",
+                code: null,
+              },
+              {
+                num: "03", icon: "building" as const, color: "#00a83a",
+                title: "Get your Base ID",
+                body: "Open Airtable → your base → Help → API docs → copy the Base ID starting with 'app'",
+                code: null,
+              },
+              {
+                num: "04", icon: "rocket" as const, color: "#ff6b00",
+                title: "Restart the server",
+                body: "Stop and restart npm run dev after saving .env.local — Next.js only reads env files on startup",
+                code: null,
+              },
+            ].map((step) => (
+              <div key={step.num} className="flex items-start gap-3 px-4 py-3.5">
+                <div
+                  className="w-7 h-7 rounded-lg border-[2px] border-[#0a0a1a] flex items-center justify-center shrink-0 mt-0.5"
+                  style={{ background: step.color, boxShadow: `1px 1px 0 #0a0a1a` }}
+                >
+                  <PixelIcon name={step.icon} size={12} color="white" glow />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-[8px] font-black text-[#aaaacc]" style={{ fontFamily: "Orbitron, sans-serif" }}>{step.num}</span>
+                    <span className="text-[10px] font-black" style={{ fontFamily: "Orbitron, sans-serif", color: step.color }}>{step.title}</span>
+                  </div>
+                  <p className="text-xs text-[#555566] leading-relaxed">{step.body}</p>
+                  {step.code && (
+                    <div
+                      className="mt-2 px-3 py-2 rounded-lg border-[1.5px] border-[#0a0a1a] font-mono text-[10px] text-[#0a0a1a] leading-relaxed whitespace-pre"
+                      style={{ background: "#f0ece0", boxShadow: "1px 1px 0 #0a0a1a" }}
+                    >
+                      {step.code}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Pages that work right now ─────────────────────── */}
+        <div>
+          <p className="text-[9px] font-black uppercase tracking-widest text-[#fffbf0] mb-2" style={{ fontFamily: "Orbitron, sans-serif" }}>
+            EXPLORE WHILE YOU CONNECT
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { href: "/workflow", icon: "lightning" as const, label: "WORKFLOW", sub: "Works without data", bg: "#e8d4ff", color: "#7c3aed", shadow: "#7c3aed" },
+              { href: "/setup", icon: "search" as const, label: "DIAGNOSTICS", sub: "Full setup guide", bg: "#ffe0e8", color: "#ff1e78", shadow: "#ff1e78" },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="rounded-2xl border-[2.5px] border-[#0a0a1a] p-4 flex flex-col gap-1.5 transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none grant-card"
+                style={{ background: item.bg, boxShadow: `4px 4px 0 ${item.shadow}` }}
+              >
+                <PixelIcon name={item.icon} size={18} color={item.color} glow />
+                <p className="text-[10px] font-black uppercase tracking-wider" style={{ fontFamily: "Orbitron, sans-serif", color: item.color }}>{item.label}</p>
+                <p className="text-[10px] text-[#555566]">{item.sub}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+
       </div>
     );
   }
@@ -172,15 +289,17 @@ async function DashboardContent() {
 
       {/* ── Hero Banner ───────────────────────────────────── */}
       <div
-        className="relative overflow-hidden rounded-2xl border-[2.5px] border-[#0a0a1a] p-5"
+        className="relative overflow-hidden rounded-2xl border-[2.5px] border-[#0a0a1a] p-5 scanlines"
         style={{ background: "#fffbf0", boxShadow: "5px 5px 0 #0a0a1a" }}
       >
+        {/* Floating pixel particles */}
+        <HeroBg />
         {/* Color stripe top */}
         <div
           className="absolute top-0 left-0 right-0 h-2"
           style={{ background: "linear-gradient(90deg, #ff1e78 0%,#ffe100 33%,#00d94e 66%,#00d4ff 100%)" }}
         />
-        <div className="pt-2">
+        <div className="pt-2 relative z-10">
           <p
             className="text-[9px] font-black uppercase tracking-[0.25em] text-[#aaaacc] mb-1"
             style={{ fontFamily: "Orbitron, sans-serif" }}
@@ -188,16 +307,17 @@ async function DashboardContent() {
             Life Development University
           </p>
           <h2
-            className="text-2xl font-black text-[#0a0a1a] leading-tight mb-3"
+            className="text-2xl font-black text-[#0a0a1a] leading-tight mb-3 glitch-text"
             style={{ fontFamily: "Orbitron, sans-serif" }}
           >
             MISSION HQ
           </h2>
 
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap relative z-10">
             {stats.urgentAlerts.length > 0 ? (
-              <div
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border-[2px] border-[#0a0a1a]"
+              <Link
+                href="#alerts"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border-[2px] border-[#0a0a1a] transition-all active:translate-y-[1px] active:shadow-none"
                 style={{ background: "#ff1e78", boxShadow: "2px 2px 0 #0a0a1a" }}
               >
                 <span className="relative flex h-2.5 w-2.5">
@@ -208,9 +328,10 @@ async function DashboardContent() {
                   className="text-[10px] font-black text-white uppercase tracking-wider"
                   style={{ fontFamily: "Orbitron, sans-serif" }}
                 >
-                  {stats.urgentAlerts.length} ALERT{stats.urgentAlerts.length > 1 ? "S" : ""}
+                  {stats.urgentAlerts.length} ALERT{stats.urgentAlerts.length > 1 ? "S" : ""} — TAP TO SEE
                 </span>
-              </div>
+                <PixelIcon name="arrow_right" size={10} color="white" />
+              </Link>
             ) : (
               <div
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg border-[2px] border-[#0a0a1a]"
@@ -229,72 +350,92 @@ async function DashboardContent() {
 
       {/* ── Stat Blocks ──────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-3">
-        <StatBlock icon="pipeline" label="Pipeline"  value={stats.total}       sub="total missions"    bg="#e8d4ff" shadowColor="#7c3aed" href="/pipeline" />
-        <StatBlock icon="quill"    label="Writing"   value={writingCount}       sub="active drafts"     bg="#fff3a0" shadowColor="#0a0a1a" href="/writing-queue" />
-        <StatBlock icon="rocket"   label="Submitted" value={submittedCount}     sub="awaiting decision" bg="#b8ffda" shadowColor="#00a83a" href="/pipeline?stage=submitted" />
-        <StatBlock
-          icon="trophy" label="Awarded"
-          value={awardedCount > 0 ? formatCurrency(stats.totalAwarded) : "0"}
-          sub={awardedCount > 0 ? `${awardedCount} wins` : "keep going!"}
-          bg="#ffd970" shadowColor="#ffa500"
-          href="/awards"
-        />
+        <div className="stat-pop stat-pop-1">
+          <StatBlock icon="pipeline" label="Pipeline"  value={stats.total}       sub="total missions"    bg="#e8d4ff" shadowColor="#7c3aed" iconColor="#7c3aed" neonColor="#7c3aed" href="/pipeline" />
+        </div>
+        <div className="stat-pop stat-pop-2">
+          <StatBlock icon="quill"    label="Writing"   value={writingCount}       sub="active drafts"     bg="#fff3a0" shadowColor="#0a0a1a" iconColor="#b89000" neonColor="#b89000" href="/writing-queue" />
+        </div>
+        <div className="stat-pop stat-pop-3">
+          <StatBlock icon="rocket"   label="Submitted" value={submittedCount}     sub="awaiting decision" bg="#b8ffda" shadowColor="#00a83a" iconColor="#00a83a" neonColor="#00a83a" href="/pipeline?stage=submitted" />
+        </div>
+        <div className="stat-pop stat-pop-4">
+          <StatBlock
+            icon="trophy" label="Awarded"
+            value={awardedCount > 0 ? formatCurrency(stats.totalAwarded) : "0"}
+            sub={awardedCount > 0 ? `${awardedCount} wins` : "keep going!"}
+            bg="#ffd970" shadowColor="#ffa500" iconColor="#ff6b00" neonColor="#ff6b00"
+            href="/awards"
+          />
+        </div>
       </div>
 
       <PixelDivider color="#ff1e78" />
 
       {/* ── Urgent Alerts ─────────────────────────────────── */}
       {stats.urgentAlerts.length > 0 && (
-        <section>
-          <SectionHeader icon="alert" label="NEEDS ATTENTION" iconBg="#ff1e78" count={stats.urgentAlerts.length} />
-          <UrgentAlerts alerts={stats.urgentAlerts} />
-        </section>
+        <ScrollReveal delay={0}>
+          <section id="alerts" style={{ scrollMarginTop: "80px" }}>
+            <SectionHeader icon="alert" label="NEEDS ATTENTION" iconBg="#ff1e78" neonColor="#ff1e78" count={stats.urgentAlerts.length} />
+            <UrgentAlerts alerts={stats.urgentAlerts} />
+          </section>
+        </ScrollReveal>
       )}
 
       {/* ── Pipeline Breakdown ────────────────────────────── */}
-      <section>
-        <SectionHeader icon="chart" label="POWER BREAKDOWN" iconBg="#e8d4ff" href="/pipeline" />
-        <div className="retro-card p-4">
-          <PipelineSnapshot stats={stats} />
-        </div>
-      </section>
+      <ScrollReveal delay={50}>
+        <section>
+          <SectionHeader icon="chart" label="POWER BREAKDOWN" iconBg="#e8d4ff" neonColor="#7c3aed" href="/pipeline" />
+          <div className="retro-card p-4">
+            <PipelineSnapshot stats={stats} />
+          </div>
+        </section>
+      </ScrollReveal>
 
       <PixelDivider color="#ffe100" />
 
       {/* ── Upcoming Deadlines ────────────────────────────── */}
       {stats.upcomingDeadlines.length > 0 && (
-        <section>
-          <SectionHeader icon="clock" label="DEADLINES" iconBg="#ffe100" href="/pipeline" count={stats.upcomingDeadlines.length} />
-          <div className="space-y-2">
-            {stats.upcomingDeadlines.map((opp) => (
-              <GrantCard key={opp.id} opportunity={opp as unknown as Opportunity} compact />
-            ))}
-          </div>
-        </section>
+        <ScrollReveal delay={80}>
+          <section>
+            <SectionHeader icon="clock" label="DEADLINES" iconBg="#ffe100" neonColor="#b89000" href="/pipeline" count={stats.upcomingDeadlines.length} />
+            <div className="space-y-2">
+              {stats.upcomingDeadlines.map((opp) => (
+                <GrantCard key={opp.id} opportunity={opp as unknown as Opportunity} compact />
+              ))}
+            </div>
+          </section>
+        </ScrollReveal>
       )}
 
       <PixelDivider color="#00d94e" />
 
       {/* ── Writing Queue ──────────────────────────────────── */}
       {stats.writingQueue.length > 0 && (
-        <section>
-          <SectionHeader icon="quill" label="ACTIVE MISSIONS" iconBg="#fff3a0" href="/writing-queue" count={stats.writingQueue.length} />
-          <div className="space-y-2">
-            {stats.writingQueue.map((opp) => (
-              <GrantCard key={opp.id} opportunity={opp as unknown as Opportunity} compact />
-            ))}
-          </div>
-        </section>
+        <ScrollReveal delay={120}>
+          <section>
+            <SectionHeader icon="quill" label="ACTIVE MISSIONS" iconBg="#fff3a0" neonColor="#b89000" href="/writing-queue" count={stats.writingQueue.length} />
+            <div className="space-y-2">
+              {stats.writingQueue.map((opp) => (
+                <GrantCard key={opp.id} opportunity={opp as unknown as Opportunity} compact />
+              ))}
+            </div>
+          </section>
+        </ScrollReveal>
       )}
 
     </div>
   );
 }
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  // Pre-fetch just the alert count so the Header bell badge is live
+  const stats = await getDashboardStats();
+  const alertCount = stats?.urgentAlerts.length ?? 0;
+
   return (
     <>
-      <Header title="LDU GRANTS" subtitle="Grant Operations" showRefresh />
+      <Header title="LDU GRANTS" subtitle="Grant Operations" showRefresh alertCount={alertCount} />
       <Suspense fallback={<DashboardSkeleton />}>
         <DashboardContent />
       </Suspense>
