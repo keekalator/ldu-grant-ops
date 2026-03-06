@@ -2,7 +2,7 @@
 
 /**
  * UserContext — global team member identity.
- * Captured once on first visit, persisted in localStorage.
+ * Character selection is required every time you open/sign in (no persistence).
  * Every action (note, status change, field edit) is automatically attributed.
  *
  * The OnboardingModal renders via createPortal directly to document.body so
@@ -397,35 +397,17 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [user,     setUserState] = useState<TeamMember | null>(null);
   const [hydrated, setHydrated]  = useState(false);
 
-  // Hydrate from localStorage after first render (client only)
+  // No persistence — character select shows every time you open/sign in
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const found = TEAM_MEMBERS.find(m => m.id === saved);
-        if (found) {
-          setUserState(found as TeamMember);
-          localStorage.setItem(HELP_KEY, found.helpId);
-        }
-      }
-    } catch {}
     setHydrated(true);
   }, []);
 
   const setUser = useCallback((m: TeamMember) => {
     setUserState(m);
-    try {
-      localStorage.setItem(STORAGE_KEY, m.id);
-      localStorage.setItem(HELP_KEY, m.helpId);
-    } catch {}
   }, []);
 
   const clearUser = useCallback(() => {
     setUserState(null);
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(HELP_KEY);
-    } catch {}
   }, []);
 
   // Always render children — never block the app tree.

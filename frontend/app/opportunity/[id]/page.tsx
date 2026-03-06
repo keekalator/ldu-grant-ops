@@ -305,6 +305,14 @@ async function OpportunityDetail({ id }: { id: string }) {
               grantName={name}
               hasWritingPlan={!!writingPlan}
               submissionLink={(fields["Submission Link"] as string) ?? undefined}
+              allRequiredDocsAttached={allRequiredDocs}
+              allRequiredDocsAttached={
+                !submissionReqs ||
+                submissionReqs.documents.length === 0 ||
+                submissionReqs.documents
+                  .filter((d) => d.required)
+                  .every((d) => d.completed || (d as { fileUrl?: string }).fileUrl)
+              }
               sharePackage={(() => {
                 const funder = (fields["Funder"] ?? fields["Funder Name"]) as string | undefined;
                 let narrativeAngle: string | undefined;
@@ -413,6 +421,7 @@ async function OpportunityDetail({ id }: { id: string }) {
 
         {/* ── Submission Package Checklist ──────────────────── */}
         {submissionReqs && (
+          <section id="submission-package">
           <Section icon="filter" label="SUBMISSION PACKAGE" iconBg="#ffe4c4">
             <SubmissionChecklist
               opportunityId={opp.id}

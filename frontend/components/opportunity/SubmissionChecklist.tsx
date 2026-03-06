@@ -8,11 +8,14 @@
  * they are specific to each funder (LOI vs full app, required attachments,
  * page limits, portal URL, etc.).
  *
- * Check-off state is persisted back into the Writing Plan JSON in Airtable.
+ * Users can upload files in-app. PDFs can be previewed before submission.
+ * Check-off + file state persisted in Writing Plan JSON in Airtable.
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import PixelIcon from "@/components/shared/PixelIcon";
+import PDFPreviewModal from "@/components/opportunity/PDFPreviewModal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -23,6 +26,8 @@ export interface SubmissionDoc {
   required: boolean;
   notes: string;
   completed: boolean;
+  fileUrl?: string;
+  fileName?: string;
 }
 
 export interface SubmissionRequirements {
@@ -52,13 +57,19 @@ const TYPE_CONFIG: Record<SubmissionDoc["type"], { label: string; color: string;
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+const ACCEPT_FILES = ".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif";
+
 export default function SubmissionChecklist({ opportunityId, requirements, rawPlan }: Props) {
+  const router = useRouter();
   const [docs, setDocs] = useState<SubmissionDoc[]>(requirements.documents ?? []);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState<string | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<SubmissionDoc | null>(null);
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
-  const completed = docs.filter(d => d.completed).length;
+  const completed = docs.filter(d => d.completed || d.fileUrl).length;
   const required  = docs.filter(d => d.required).length;
-  const allRequired = docs.filter(d => d.required).every(d => d.completed);
+  const allRequired = docs.filter(d => d.required).every(d => d.completed || !!d.fileUrl);
 
   // ── Save updated docs into the plan JSON in Airtable ────────────────────────
   const saveDocs = useCallback(async (updated: SubmissionDoc[]) => {
@@ -75,7 +86,7 @@ export default function SubmissionChecklist({ opportunityId, requirements, rawPl
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ fields: { "Writing Plan": JSON.stringify(updatedPlan) } }),
       });
-    } catch { /* silent — checkbox state still updates locally */ }
+    } catch { /* silent */ }
     setSaving(false);
   }, [opportunityId, rawPlan, requirements]);
 
@@ -83,6 +94,41 @@ export default function SubmissionChecklist({ opportunityId, requirements, rawPl
     const updated = docs.map(d => d.id === id ? { ...d, completed: !d.completed } : d);
     setDocs(updated);
     saveDocs(updated);
+  }
+
+  async function handleUpload(docId: string, file: File) {
+    setUploading(docId);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("docId", docId);
+      const res = await fetch(`/api/opportunities/${opportunityId}/upload`, {
+        method: "POST",
+        body: form,
+      });
+      if (!res.ok) throw new Error("Upload failed");
+      const { url, fileName } = await res.json();
+      const updated = docs.map(d =>
+        d.id === docId
+          ? { ...d, fileUrl: url, fileName: fileName ?? file.name, completed: true }
+          : d
+      );
+      setDocs(updated);
+      router.refresh();
+    } catch { /* show error toast could be added */ }
+    setUploading(null);
+  }
+
+  function handleRemove(docId: string) {
+    const updated = docs.map(d =>
+      d.id === docId ? { ...d, fileUrl: undefined, fileName: undefined, completed: false } : d
+    );
+    setDocs(updated);
+    saveDocs(updated);
+  }
+
+  function isPdf(fileName?: string) {
+    return fileName?.toLowerCase().endsWith(".pdf");
   }
 
   if (!docs.length) return null;
@@ -205,46 +251,16 @@ export default function SubmissionChecklist({ opportunityId, requirements, rawPl
               </div>
               {/* Items */}
               {items.map(doc => (
-                <button
+                <DocRow
                   key={doc.id}
-                  onClick={() => toggle(doc.id)}
-                  className="w-full flex items-start gap-3 px-4 py-3 transition-all active:opacity-70 text-left"
-                  style={{ background: doc.completed ? "#f0fff8" : "#fffbf0" }}
-                >
-                  {/* Checkbox */}
-                  <div
-                    className="w-5 h-5 rounded-md border-[2px] border-[#0a0a1a] flex items-center justify-center shrink-0 mt-0.5 transition-all"
-                    style={{
-                      background: doc.completed ? "#00d94e" : "#ffffff",
-                      boxShadow: doc.completed ? "1px 1px 0 #00a83a" : "1px 1px 0 #0a0a1a",
-                    }}
-                  >
-                    {doc.completed && <PixelIcon name="check" size={10} color="white" />}
-                  </div>
-                  {/* Label */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`text-sm leading-snug ${doc.completed ? "line-through text-[#aaaacc]" : "font-bold text-[#0a0a1a]"}`}>
-                        {doc.name}
-                      </span>
-                      {doc.required && !doc.completed && (
-                        <span className="text-[7px] font-black px-1.5 py-0.5 rounded border border-[#ff1e78] text-[#ff1e78]"
-                          style={{ fontFamily: "Orbitron, sans-serif", background: "#ffe0e8" }}>
-                          REQUIRED
-                        </span>
-                      )}
-                      {!doc.required && (
-                        <span className="text-[7px] font-bold px-1.5 py-0.5 rounded border border-[#aaaacc] text-[#aaaacc]"
-                          style={{ fontFamily: "Orbitron, sans-serif" }}>
-                          OPTIONAL
-                        </span>
-                      )}
-                    </div>
-                    {doc.notes && (
-                      <p className="text-[10px] text-[#888899] leading-snug mt-0.5">{doc.notes}</p>
-                    )}
-                  </div>
-                </button>
+                  doc={doc}
+                  opportunityId={opportunityId}
+                  onUpload={handleUpload}
+                  onRemove={handleRemove}
+                  onToggle={toggle}
+                  onPreview={setPreviewDoc}
+                  uploadingId={uploadingId}
+                />
               ))}
             </div>
           );

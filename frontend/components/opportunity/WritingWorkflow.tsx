@@ -88,6 +88,7 @@ interface Props {
   hasWritingPlan: boolean;
   submissionLink?: string | null;
   sharePackage?: SharePackage | null;
+  allRequiredDocs?: boolean;  // true when submission package has all required files
 }
 
 export default function WritingWorkflow({
@@ -97,6 +98,7 @@ export default function WritingWorkflow({
   hasWritingPlan,
   submissionLink,
   sharePackage,
+  allRequiredDocs = true,
 }: Props) {
   const { user } = useUser();
   const router   = useRouter();

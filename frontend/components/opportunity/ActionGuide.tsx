@@ -3,13 +3,12 @@
 /**
  * ActionGuide — shows a "YOUR TURN" card on the grant detail page.
  * Based on the grant's current status, tells each team member exactly what to do next.
- * Reads saved role from localStorage so it personalizes automatically.
+ * Uses current session's character selection from UserContext.
  */
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import PixelIcon from "@/components/shared/PixelIcon";
-
-const STORAGE_KEY = "ldu_help_role";
+import { useUser } from "@/lib/user-context";
 
 // ─── Status-driven action map ─────────────────────────────────────────────────
 // For each status, define who acts and what they do
