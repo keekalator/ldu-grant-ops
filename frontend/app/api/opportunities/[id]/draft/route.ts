@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath }            from "next/cache";
 import { fetchBestGrantPage }        from "@/lib/fetchGrantPage";
 import { buildEntityContext }        from "@/lib/entityProfiles";
+import { notifyDraftReady }          from "@/lib/notify";
 
 const ANTHROPIC_KEY  = process.env.ANTHROPIC_API_KEY?.trim();
 const AIRTABLE_TOKEN = process.env.AIRTABLE_API_TOKEN?.trim();
@@ -192,6 +193,11 @@ export async function POST(
     console.error("[draft] Airtable save failed:", e);
     // Still return the draft to the client even if save failed
   }
+
+  // Fire "draft ready" push notification
+  const grantName = String(fields["Grant Name"] ?? "Grant");
+  const entity    = String(fields["Submitting Entity"] ?? "LDU");
+  notifyDraftReady(grantName, entity, id).catch(() => {});
 
   revalidatePath(`/opportunity/${id}`);
 

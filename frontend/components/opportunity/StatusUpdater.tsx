@@ -75,6 +75,35 @@ export default function StatusUpdater({ opportunityId, currentStatus, existingNo
 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 2000);
+
+      // Fire push notification for key status milestones
+      if (["Submitted", "Awarded", "Declined", "Rejected"].includes(newStatus)) {
+        try {
+          // Fetch grant name + funder for the notification
+          const rec = await fetch(`/api/opportunities/${opportunityId}`);
+          if (rec.ok) {
+            const d = await rec.json();
+            const grantName = (d.fields?.["Grant Name"] as string) ?? "Grant";
+            const funder    = (d.fields?.["Funder Name"] as string) ?? "";
+            await fetch("/api/notify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                title: `[${newStatus.toUpperCase()}] ${grantName}`,
+                body: newStatus === "Awarded"
+                  ? `CONGRATULATIONS — ${grantName} was AWARDED! Start onboarding.`
+                  : newStatus === "Submitted"
+                  ? `${grantName} submitted to ${funder}`
+                  : `${grantName} ${newStatus.toLowerCase()} by ${funder || "funder"}`,
+                priority: newStatus === "Awarded" ? "max" : newStatus === "Submitted" ? "high" : "default",
+                tags: newStatus === "Awarded" ? ["trophy", "tada", "ldu_grants"]
+                    : newStatus === "Submitted" ? ["rocket", "ldu_grants"]
+                    : ["x", "ldu_grants"],
+              }),
+            });
+          }
+        } catch { /* never block the save on a failed notification */ }
+      }
     } catch { setStatus(prev); }
     finally { setSaving(false); }
   }

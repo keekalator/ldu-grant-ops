@@ -86,6 +86,14 @@ jobs:
           LOG_LEVEL:            INFO
         run: python scripts/run_pipeline.py --mode daily
 
+      - name: Send deadline push alerts
+        env:
+          AIRTABLE_API_TOKEN:   ${{ secrets.AIRTABLE_API_TOKEN }}
+          AIRTABLE_BASE_ID:     ${{ secrets.AIRTABLE_BASE_ID }}
+          NTFY_TOPIC:           ${{ secrets.NTFY_TOPIC }}
+          NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL }}
+        run: python agents/notifier.py
+
   # ─── WEEKLY REVIEW: Monday 8 AM PT (after daily) ─────────────────────────────
   weekly:
     name: "📊 Weekly Pipeline Review"

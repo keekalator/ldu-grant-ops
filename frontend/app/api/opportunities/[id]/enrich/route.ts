@@ -16,6 +16,7 @@ import { NextRequest, NextResponse }  from "next/server";
 import { revalidatePath }             from "next/cache";
 import { fetchBestGrantPage }         from "@/lib/fetchGrantPage";
 import { ALL_ENTITIES_PROMPT }        from "@/lib/entityProfiles";
+import { notifyMultiEntity }          from "@/lib/notify";
 
 const ANTHROPIC_KEY  = process.env.ANTHROPIC_API_KEY?.trim();
 const AIRTABLE_TOKEN = process.env.AIRTABLE_API_TOKEN?.trim();
@@ -276,6 +277,17 @@ export async function POST(
   } catch (e) {
     console.error("[enrich] Airtable save failed:", e);
     return NextResponse.json({ error: `Airtable save failed: ${e}` }, { status: 500 });
+  }
+
+  // ── 5. Fire multi-entity push notification ───────────────────────────────
+  if (enriched.multiEntityAlert && enriched.entityScores?.length) {
+    const topEntities = enriched.entityScores
+      .filter(s => s.score >= 4)
+      .map(s => s.entity);
+    if (topEntities.length >= 2) {
+      const grantName = String(fields["Grant Name"] ?? "Grant");
+      notifyMultiEntity(grantName, topEntities, id).catch(() => {});
+    }
   }
 
   revalidatePath(`/opportunity/${id}`);
