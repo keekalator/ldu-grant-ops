@@ -121,16 +121,34 @@ async function OpportunityDetail({ id }: { id: string }) {
   const source      = fields.Source;
   const notes       = (fields.Notes as string) ?? "";
   const writingPlan   = (fields["Writing Plan"] as string | undefined) ?? null;
-  // Parse submission requirements out of the writing plan JSON (if present)
+  // Parse submission requirements and share package data from writing plan
   let submissionReqs: SubmissionRequirements | null = null;
+  let sharePackage: { funder?: string; amount?: string; deadline?: string; pillars?: string[]; narrativeAngle?: string; sections?: string[] } | undefined;
   if (writingPlan) {
     try {
       const parsed = JSON.parse(writingPlan);
       if (parsed?.submissionRequirements?.documents?.length) {
         submissionReqs = parsed.submissionRequirements as SubmissionRequirements;
       }
+      sharePackage = {
+        funder: (fields["Funder"] ?? fields["Funder Name"]) as string | undefined,
+        amount: amount != null ? formatCurrency(Number(amount)) : undefined,
+        deadline: deadline ? formatDeadline(deadline) : undefined,
+        pillars: pillars as string[],
+        narrativeAngle: parsed?.angle,
+        sections: Array.isArray(parsed?.sections) ? parsed.sections : undefined,
+      };
     } catch { /* ignore */ }
   }
+  if (!sharePackage && ["Writing Queue", "Active", "Submitted"].includes(status)) {
+    sharePackage = {
+      funder: (fields["Funder"] ?? fields["Funder Name"]) as string | undefined,
+      amount: amount != null ? formatCurrency(Number(amount)) : undefined,
+      deadline: deadline ? formatDeadline(deadline) : undefined,
+      pillars: pillars as string[],
+    };
+  }
+  const submissionLink = (fields["Submission Link"] as string | undefined) ?? undefined;
   const dqReason      = (fields["Disqualification Reason"] as string | undefined) ?? null;
   const isDisqualified = status === "Disqualified";
   const score         = fields["Weighted Score"] ?? fields.Score;
@@ -286,6 +304,27 @@ async function OpportunityDetail({ id }: { id: string }) {
               currentStatus={status}
               grantName={name}
               hasWritingPlan={!!writingPlan}
+              submissionLink={(fields["Submission Link"] as string) ?? undefined}
+              sharePackage={(() => {
+                const funder = (fields["Funder"] ?? fields["Funder Name"]) as string | undefined;
+                let narrativeAngle: string | undefined;
+                let sections: string[] = [];
+                if (writingPlan) {
+                  try {
+                    const p = JSON.parse(writingPlan);
+                    narrativeAngle = p?.angle;
+                    sections = Array.isArray(p?.sections) ? p.sections : [];
+                  } catch { /* ignore */ }
+                }
+                return {
+                  funder,
+                  amount: amount != null ? formatCurrency(Number(amount)) : undefined,
+                  deadline: deadline ? formatDeadline(deadline) : undefined,
+                  pillars: Array.isArray(pillars) ? pillars : [],
+                  narrativeAngle,
+                  sections,
+                };
+              })()}
             />
           </Section>
         )}

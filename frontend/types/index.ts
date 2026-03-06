@@ -66,6 +66,7 @@ export interface Opportunity {
     "Next Steps"?: string;
     "Writing Plan"?: string;           // JSON string — parsed by WritingPlanPanel
     "Disqualification Reason"?: string; // set when Status = Disqualified
+    "Submission Link"?: string;       // portal URL for submitting to funder
   };
 }
 

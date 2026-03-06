@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import PixelIcon from "@/components/shared/PixelIcon";
+import FieldEditor from "@/components/opportunity/FieldEditor";
+import ShipModal from "@/components/opportunity/ShipModal";
 import { useUser } from "@/lib/user-context";
 
 // ─── Stage config ─────────────────────────────────────────────────────────────
@@ -42,19 +44,19 @@ type WorkflowStatus = "Writing Queue" | "Active" | "Submitted";
 const TRANSITIONS: Record<WorkflowStatus, { next: string; label: string; color: string; bg: string; shadow: string; confirm: string }> = {
   "Writing Queue": {
     next:    "Active",
-    label:   "SEND TO REVIEW",
+    label:   "SHARE WITH KIKA",
     color:   "#0066cc",
     bg:      "#c8e0ff",
     shadow:  "#0066cc",
-    confirm: "Mark draft complete and send to Kika for final review?",
+    confirm: "Mark draft complete and share with Kika for final review?",
   },
   "Active": {
     next:    "Submitted",
-    label:   "MARK SUBMITTED",
+    label:   "SHIP TO FUNDER",
     color:   "#00a83a",
     bg:      "#b8ffda",
     shadow:  "#00a83a",
-    confirm: "Confirm this application has been submitted to the funder?",
+    confirm: "", // handled by ShipModal instead
   },
   "Submitted": {
     next:    "Submitted",
@@ -70,19 +72,39 @@ const SEP = "──────────────────────�
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+interface SharePackage {
+  funder?: string;
+  amount?: string;
+  deadline?: string;
+  pillars?: string[];
+  narrativeAngle?: string;
+  sections?: string[];
+}
+
 interface Props {
   opportunityId: string;
   currentStatus: string;
   grantName:     string;
   hasWritingPlan: boolean;
+  submissionLink?: string | null;
+  sharePackage?: SharePackage | null;
 }
 
-export default function WritingWorkflow({ opportunityId, currentStatus, grantName, hasWritingPlan }: Props) {
+export default function WritingWorkflow({
+  opportunityId,
+  currentStatus,
+  grantName,
+  hasWritingPlan,
+  submissionLink,
+  sharePackage,
+}: Props) {
   const { user } = useUser();
   const router   = useRouter();
   const [status, setStatus]   = useState<string>(currentStatus);
   const [saving, setSaving]   = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "done" | "error">("idle");
+  const [showShipModal, setShowShipModal] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState(false);
 
   const activeIdx  = STAGES.findIndex(s => s.status === status);
   const activeStage = STAGES[activeIdx];
